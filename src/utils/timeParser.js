@@ -71,8 +71,8 @@ export function parseTimeText(raw) {
   m = lower.match(/(\d{1,2})\s*(am|pm)/)
   if (m) return fmt(parseInt(m[1]), 0, m[2].toUpperCase())
 
-  // Can't parse — return original so nothing is lost
-  return text
+  // Can't parse — return null so callers don't display garbage
+  return null
 }
 
 /**
@@ -101,10 +101,8 @@ export function calcHoursWorked(clockIn, clockOut) {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(h, m, period) {
-  // Normalize 12-hour
-  if (period === 'AM' && h === 12) h = 12
-  if (period === 'PM' && h === 12) h = 12
-  if (period === 'PM' && h < 12)   h = h  // keep as-is, display as PM
+  // Validate ranges — reject garbage like "46:00 PM"
+  if (h < 1 || h > 12 || m < 0 || m > 59) return null
   return `${h}:${String(m).padStart(2, '0')} ${period}`
 }
 
