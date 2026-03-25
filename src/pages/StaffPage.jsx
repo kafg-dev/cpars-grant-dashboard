@@ -46,49 +46,78 @@ function isPast(date) {
   return date < today
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function timeToMins(t) {
+  if (!t) return 0
+  const m = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+  if (!m) return 0
+  let h = parseInt(m[1])
+  const mn = parseInt(m[2])
+  const p = m[3].toUpperCase()
+  if (p === 'PM' && h !== 12) h += 12
+  if (p === 'AM' && h === 12) h = 0
+  return h * 60 + mn
+}
+
 // ─── Calendar Cell ─────────────────────────────────────────────────────────────
 
 function CalendarCell({ entries, day }) {
-  const clock   = entries.find((e) => e.group.id === 'group_mm02nccy')
-  const clockIn  = parseTimeText(clock?.clockIn)
-  const clockOut = parseTimeText(clock?.clockOut)
-  const hours    = calcHoursWorked(clockIn, clockOut)
-  const future   = !isPast(day) && !isToday(day)
+  const future = !isPast(day) && !isToday(day)
 
   if (future) {
     return (
-      <div className="border border-gray-100 rounded-lg p-2.5 min-h-[72px] bg-gray-50 flex items-center justify-center text-gray-300 text-xs">
+      <div className="border border-gray-100 rounded-lg p-2 min-h-[72px] bg-gray-50 flex items-center justify-center text-gray-300 text-xs">
         —
       </div>
     )
   }
 
-  const bothPresent = clockIn && clockOut
-  const onlyIn      = clockIn && !clockOut
+  // Collect ALL clock events from every row for this staff/day
+  const events = []
+  entries
+    .filter((e) => e.group.id === 'group_mm02nccy')
+    .forEach((e) => {
+      const inTime  = parseTimeText(e.clockIn)
+      const outTime = parseTimeText(e.clockOut)
+      if (inTime)  events.push({ type: 'in',  time: inTime })
+      if (outTime) events.push({ type: 'out', time: outTime })
+    })
+
+  // Sort chronologically
+  events.sort((a, b) => timeToMins(a.time) - timeToMins(b.time))
+
+  const hasIn  = events.some((e) => e.type === 'in')
+  const hasOut = events.some((e) => e.type === 'out')
 
   return (
-    <div className={`border rounded-lg p-2.5 min-h-[72px] text-xs space-y-1.5 ${
-      bothPresent ? 'bg-emerald-50 border-emerald-200' :
-      onlyIn      ? 'bg-amber-50 border-amber-200' :
-                    'bg-gray-50 border-gray-200'
+    <div className={`border rounded-lg p-2 min-h-[72px] text-xs space-y-1 ${
+      hasIn && hasOut ? 'bg-emerald-50 border-emerald-200' :
+      hasIn           ? 'bg-amber-50  border-amber-200'   :
+                        'bg-gray-50   border-gray-200'
     }`}>
-      {/* Clock In */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-gray-400 font-bold">↑</span>
-        <span className={`font-semibold ${clockIn ? 'text-emerald-700' : 'text-gray-400'}`}>
-          {clockIn || 'NONE'}
-        </span>
-      </div>
-      {/* Clock Out */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-gray-400 font-bold">↓</span>
-        <span className={`font-semibold ${clockOut ? 'text-rose-600' : 'text-gray-400'}`}>
-          {clockOut || 'NONE'}
-        </span>
-      </div>
-      {/* Hours worked */}
-      {hours && (
-        <div className="text-indigo-600 font-semibold text-[11px] pt-0.5">{hours}</div>
+      {events.length > 0 ? (
+        events.map((ev, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className={`font-bold w-3 ${ev.type === 'in' ? 'text-emerald-500' : 'text-rose-400'}`}>
+              {ev.type === 'in' ? '↑' : '↓'}
+            </span>
+            <span className={`font-semibold ${ev.type === 'in' ? 'text-emerald-700' : 'text-rose-600'}`}>
+              {ev.time}
+            </span>
+          </div>
+        ))
+      ) : (
+        <>
+          <div className="flex items-center gap-1">
+            <span className="font-bold w-3 text-gray-300">↑</span>
+            <span className="text-gray-400 font-semibold">NONE</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="font-bold w-3 text-gray-300">↓</span>
+            <span className="text-gray-400 font-semibold">NONE</span>
+          </div>
+        </>
       )}
     </div>
   )
