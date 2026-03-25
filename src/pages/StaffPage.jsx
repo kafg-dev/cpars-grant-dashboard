@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { fetchAllStaff, transformStaffItem } from '../utils/api'
-import { parseTimeText, calcHoursWorked } from '../utils/timeParser'
 
 const REFRESH_INTERVAL = 30
 
@@ -46,20 +45,6 @@ function isPast(date) {
   return date < today
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function timeToMins(t) {
-  if (!t) return 0
-  const m = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-  if (!m) return 0
-  let h = parseInt(m[1])
-  const mn = parseInt(m[2])
-  const p = m[3].toUpperCase()
-  if (p === 'PM' && h !== 12) h += 12
-  if (p === 'AM' && h === 12) h = 0
-  return h * 60 + mn
-}
-
 // ─── Calendar Cell ─────────────────────────────────────────────────────────────
 
 function CalendarCell({ entries, day }) {
@@ -73,19 +58,14 @@ function CalendarCell({ entries, day }) {
     )
   }
 
-  // Collect ALL clock events from every row for this staff/day
+  // Collect ALL clock events from every row for this staff/day — raw values, no parsing
   const events = []
   entries
     .filter((e) => e.group.id === 'group_mm02nccy')
     .forEach((e) => {
-      const inTime  = parseTimeText(e.clockIn)
-      const outTime = parseTimeText(e.clockOut)
-      if (inTime)  events.push({ type: 'in',  time: inTime })
-      if (outTime) events.push({ type: 'out', time: outTime })
+      if (e.clockIn)  events.push({ type: 'in',  time: e.clockIn })
+      if (e.clockOut) events.push({ type: 'out', time: e.clockOut })
     })
-
-  // Sort chronologically
-  events.sort((a, b) => timeToMins(a.time) - timeToMins(b.time))
 
   const hasIn  = events.some((e) => e.type === 'in')
   const hasOut = events.some((e) => e.type === 'out')
