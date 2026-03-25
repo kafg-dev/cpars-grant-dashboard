@@ -1,6 +1,6 @@
 import { RefreshCw, Search } from 'lucide-react'
 
-export default function Header({ lastUpdated, countdown, onRefresh, loading, search, onSearch }) {
+export default function Header({ title = 'Dashboard', subtitle = 'Live from Monday.com', lastUpdated, countdown, onRefresh, loading, search, onSearch }) {
   const timeStr = lastUpdated
     ? lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : null
@@ -12,10 +12,10 @@ export default function Header({ lastUpdated, countdown, onRefresh, loading, sea
         <div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Grant Application Tracker</h1>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h1>
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            CPARS · Live from Monday.com
+            {subtitle}
             {timeStr && (
               <span className="ml-2 text-gray-400">· Updated {timeStr}</span>
             )}
