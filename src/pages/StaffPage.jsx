@@ -67,15 +67,18 @@ function CalendarCell({ entries, day }) {
       if (e.clockOut) events.push({ type: 'out', time: e.clockOut })
     })
 
-  const hasIn  = events.some((e) => e.type === 'in')
-  const hasOut = events.some((e) => e.type === 'out')
+  const hasIn    = events.some((e) => e.type === 'in')
+  const hasOut   = events.some((e) => e.type === 'out')
+  const update   = entries.find((e) => e.group.id === 'topics')
+  const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className={`border rounded-lg p-2 min-h-[72px] text-xs space-y-1 ${
+    <div className={`border rounded-lg p-2 text-xs space-y-1.5 ${
       hasIn && hasOut ? 'bg-emerald-50 border-emerald-200' :
       hasIn           ? 'bg-amber-50  border-amber-200'   :
                         'bg-gray-50   border-gray-200'
     }`}>
+      {/* Clock events */}
       {events.length > 0 ? (
         events.map((ev, i) => (
           <div key={i} className="flex items-center gap-1">
@@ -98,6 +101,23 @@ function CalendarCell({ entries, day }) {
             <span className="text-gray-400 font-semibold">NONE</span>
           </div>
         </>
+      )}
+
+      {/* Daily update */}
+      {update?.info && (
+        <div className="pt-1 border-t border-gray-200">
+          <p className={`text-gray-500 leading-snug ${expanded ? '' : 'line-clamp-2'}`}>
+            {update.info}
+          </p>
+          {update.info.length > 80 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+              className="text-indigo-500 hover:text-indigo-700 font-medium mt-0.5"
+            >
+              {expanded ? 'less' : 'more'}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
