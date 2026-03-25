@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { fetchAllStaff, transformStaffItem } from '../utils/api'
 import { parseTimeText, calcHoursWorked } from '../utils/timeParser'
 
@@ -46,127 +46,51 @@ function isPast(date) {
   return date < today
 }
 
-// ─── Update Modal ─────────────────────────────────────────────────────────────
-
-function UpdateModal({ entry, onClose }) {
-  if (!entry) return null
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="font-bold text-gray-900 text-lg">{entry.staffName}</div>
-            <div className="text-sm text-gray-500">
-              {new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </div>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {entry.info && (
-          <div className="bg-gray-50 rounded-xl p-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Daily Update</div>
-            <p className="text-sm text-gray-700 leading-relaxed">{entry.info}</p>
-          </div>
-        )}
-
-        {(entry.clockIn || entry.clockOut) && (() => {
-          const inTime  = parseTimeText(entry.clockIn)
-          const outTime = parseTimeText(entry.clockOut)
-          const hours   = calcHoursWorked(inTime, outTime)
-          return (
-            <div className="space-y-2">
-              <div className="flex gap-3">
-                {inTime && (
-                  <div className="flex-1 bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100">
-                    <div className="text-xs text-emerald-600 font-semibold uppercase tracking-wider mb-1">Clock In</div>
-                    <div className="text-2xl font-bold text-emerald-700">{inTime}</div>
-                  </div>
-                )}
-                {outTime && (
-                  <div className="flex-1 bg-rose-50 rounded-xl p-3 text-center border border-rose-100">
-                    <div className="text-xs text-rose-600 font-semibold uppercase tracking-wider mb-1">Clock Out</div>
-                    <div className="text-2xl font-bold text-rose-700">{outTime}</div>
-                  </div>
-                )}
-              </div>
-              {hours && (
-                <div className="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-100">
-                  <div className="text-xs text-indigo-500 font-semibold uppercase tracking-wider mb-0.5">Hours Worked</div>
-                  <div className="text-2xl font-bold text-indigo-700">{hours}</div>
-                </div>
-              )}
-            </div>
-          )
-        })()}
-      </div>
-    </div>
-  )
-}
-
 // ─── Calendar Cell ─────────────────────────────────────────────────────────────
 
 function CalendarCell({ entries, day }) {
-  const [selected, setSelected] = useState(null)
-  const update = entries.find((e) => e.group.id === 'topics')
-  const clock  = entries.find((e) => e.group.id === 'group_mm02nccy')
-  const merged = update ? { ...update, clockIn: clock?.clockIn || '', clockOut: clock?.clockOut || '' } : null
+  const clock   = entries.find((e) => e.group.id === 'group_mm02nccy')
+  const clockIn  = parseTimeText(clock?.clockIn)
+  const clockOut = parseTimeText(clock?.clockOut)
+  const hours    = calcHoursWorked(clockIn, clockOut)
+  const future   = !isPast(day) && !isToday(day)
 
-  const today   = isToday(day)
-  const past    = isPast(day)
-  const future  = !past && !today
-  const hasData = !!update
+  if (future) {
+    return (
+      <div className="border border-gray-100 rounded-lg p-2.5 min-h-[72px] bg-gray-50 flex items-center justify-center text-gray-300 text-xs">
+        —
+      </div>
+    )
+  }
 
-  let cellCls = 'border rounded-lg p-2.5 min-h-[80px] text-xs transition-all '
-  if (hasData)        cellCls += 'bg-emerald-50 border-emerald-200 cursor-pointer hover:bg-emerald-100'
-  else if (future)    cellCls += 'bg-gray-50 border-gray-100 text-gray-300'
-  else if (today)     cellCls += 'bg-amber-50 border-amber-200'
-  else                cellCls += 'bg-red-50 border-red-100'
+  const bothPresent = clockIn && clockOut
+  const onlyIn      = clockIn && !clockOut
 
   return (
-    <>
-      <div className={cellCls} onClick={() => hasData && setSelected(merged)}>
-        {hasData ? (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1">
-              <CheckCircle className="w-3 h-3 text-emerald-500 shrink-0" />
-              <span className="text-emerald-700 font-semibold">Submitted</span>
-            </div>
-            <p className="text-gray-500 line-clamp-2 leading-snug">{update.info}</p>
-            {(clock?.clockIn || clock?.clockOut) && (() => {
-              const inTime  = parseTimeText(clock.clockIn)
-              const outTime = parseTimeText(clock.clockOut)
-              const hours   = calcHoursWorked(inTime, outTime)
-              return (
-                <div className="flex flex-wrap gap-1 pt-0.5">
-                  {inTime  && <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">↑ {inTime}</span>}
-                  {outTime && <span className="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-medium">↓ {outTime}</span>}
-                  {hours   && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-medium">{hours}</span>}
-                </div>
-              )
-            })()}
-          </div>
-        ) : future ? (
-          <span className="text-gray-300">—</span>
-        ) : today ? (
-          <div className="flex items-center gap-1 text-amber-600">
-            <AlertCircle className="w-3 h-3" />
-            <span className="font-medium">Pending</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 text-red-400">
-            <AlertCircle className="w-3 h-3" />
-            <span>No entry</span>
-          </div>
-        )}
+    <div className={`border rounded-lg p-2.5 min-h-[72px] text-xs space-y-1.5 ${
+      bothPresent ? 'bg-emerald-50 border-emerald-200' :
+      onlyIn      ? 'bg-amber-50 border-amber-200' :
+                    'bg-gray-50 border-gray-200'
+    }`}>
+      {/* Clock In */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-gray-400 font-bold">↑</span>
+        <span className={`font-semibold ${clockIn ? 'text-emerald-700' : 'text-gray-400'}`}>
+          {clockIn || 'NONE'}
+        </span>
       </div>
-      {selected && <UpdateModal entry={selected} onClose={() => setSelected(null)} />}
-    </>
+      {/* Clock Out */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-gray-400 font-bold">↓</span>
+        <span className={`font-semibold ${clockOut ? 'text-rose-600' : 'text-gray-400'}`}>
+          {clockOut || 'NONE'}
+        </span>
+      </div>
+      {/* Hours worked */}
+      {hours && (
+        <div className="text-indigo-600 font-semibold text-[11px] pt-0.5">{hours}</div>
+      )}
+    </div>
   )
 }
 
@@ -222,12 +146,16 @@ export default function StaffPage() {
     lookup[item.staffName][dk].push(item)
   })
 
-  // Stats
-  const totalStaff     = staffNames.length
-  const submittedToday = staffNames.filter((n) => lookup[n]?.[todayKey]?.some((i) => i.group.id === 'topics')).length
-  const pendingToday   = totalStaff - submittedToday
-  const weekKeys       = weekDays.map(toDateKey)
-  const updatesThisWeek = items.filter((i) => i.group.id === 'topics' && weekKeys.includes(i.date)).length
+  // Stats — based on clock records
+  const totalStaff    = staffNames.length
+  const clockedInToday = staffNames.filter((n) =>
+    lookup[n]?.[todayKey]?.some((i) => i.group.id === 'group_mm02nccy' && i.clockIn)
+  ).length
+  const missingToday  = totalStaff - clockedInToday
+  const weekKeys      = weekDays.map(toDateKey)
+  const clockedThisWeek = items.filter((i) =>
+    i.group.id === 'group_mm02nccy' && weekKeys.includes(i.date) && i.clockIn
+  ).length
 
   return (
     <div className="flex flex-col h-full">
@@ -272,15 +200,15 @@ export default function StaffPage() {
             </div>
             <div className="bg-emerald-50 rounded-xl p-4 flex items-center gap-3 border border-white shadow-sm">
               <div className="bg-emerald-100 text-emerald-600 rounded-lg p-2.5"><CheckCircle className="w-5 h-5" /></div>
-              <div><div className="text-2xl font-bold text-emerald-700">{submittedToday}</div><div className="text-xs text-gray-500 mt-1">Submitted Today</div></div>
+              <div><div className="text-2xl font-bold text-emerald-700">{clockedInToday}</div><div className="text-xs text-gray-500 mt-1">Clocked In Today</div></div>
             </div>
             <div className="bg-amber-50 rounded-xl p-4 flex items-center gap-3 border border-white shadow-sm">
               <div className="bg-amber-100 text-amber-600 rounded-lg p-2.5"><AlertCircle className="w-5 h-5" /></div>
-              <div><div className="text-2xl font-bold text-amber-700">{pendingToday}</div><div className="text-xs text-gray-500 mt-1">Pending Today</div></div>
+              <div><div className="text-2xl font-bold text-amber-700">{missingToday}</div><div className="text-xs text-gray-500 mt-1">Missing Today</div></div>
             </div>
             <div className="bg-blue-50 rounded-xl p-4 flex items-center gap-3 border border-white shadow-sm">
               <div className="bg-blue-100 text-blue-600 rounded-lg p-2.5"><Clock className="w-5 h-5" /></div>
-              <div><div className="text-2xl font-bold text-blue-700">{updatesThisWeek}</div><div className="text-xs text-gray-500 mt-1">Updates This Week</div></div>
+              <div><div className="text-2xl font-bold text-blue-700">{clockedThisWeek}</div><div className="text-xs text-gray-500 mt-1">Clocked In This Week</div></div>
             </div>
           </div>
 
@@ -373,11 +301,10 @@ export default function StaffPage() {
 
           {/* Legend */}
           <div className="flex items-center gap-4 text-xs text-gray-500">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200" /><span>Submitted</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-50 border border-amber-200" /><span>Pending (today)</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-red-50 border border-red-100" /><span>No entry (past)</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-50 border border-emerald-200" /><span>Both clocked</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-50 border border-amber-200" /><span>Clock in only</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-gray-50 border border-gray-200" /><span>No record (NONE)</span></div>
             <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-gray-50 border border-gray-100" /><span>Future</span></div>
-            <span className="ml-2 italic">Click a green cell to read the full update</span>
           </div>
         </div>
       </div>
