@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle, X } from 'lucide-react'
 import { fetchAllStaff, transformStaffItem } from '../utils/api'
+import { parseTimeText, calcHoursWorked } from '../utils/timeParser'
 
 const REFRESH_INTERVAL = 30
 
@@ -74,22 +75,35 @@ function UpdateModal({ entry, onClose }) {
           </div>
         )}
 
-        {(entry.clockIn || entry.clockOut) && (
-          <div className="flex gap-4">
-            {entry.clockIn && (
-              <div className="flex-1 bg-emerald-50 rounded-xl p-3 text-center">
-                <div className="text-xs text-emerald-600 font-semibold uppercase tracking-wider">Clock In</div>
-                <div className="text-lg font-bold text-emerald-700 mt-1">{entry.clockIn}</div>
+        {(entry.clockIn || entry.clockOut) && (() => {
+          const inTime  = parseTimeText(entry.clockIn)
+          const outTime = parseTimeText(entry.clockOut)
+          const hours   = calcHoursWorked(inTime, outTime)
+          return (
+            <div className="space-y-2">
+              <div className="flex gap-3">
+                {inTime && (
+                  <div className="flex-1 bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100">
+                    <div className="text-xs text-emerald-600 font-semibold uppercase tracking-wider mb-1">Clock In</div>
+                    <div className="text-2xl font-bold text-emerald-700">{inTime}</div>
+                  </div>
+                )}
+                {outTime && (
+                  <div className="flex-1 bg-rose-50 rounded-xl p-3 text-center border border-rose-100">
+                    <div className="text-xs text-rose-600 font-semibold uppercase tracking-wider mb-1">Clock Out</div>
+                    <div className="text-2xl font-bold text-rose-700">{outTime}</div>
+                  </div>
+                )}
               </div>
-            )}
-            {entry.clockOut && (
-              <div className="flex-1 bg-rose-50 rounded-xl p-3 text-center">
-                <div className="text-xs text-rose-600 font-semibold uppercase tracking-wider">Clock Out</div>
-                <div className="text-lg font-bold text-rose-700 mt-1">{entry.clockOut}</div>
-              </div>
-            )}
-          </div>
-        )}
+              {hours && (
+                <div className="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-100">
+                  <div className="text-xs text-indigo-500 font-semibold uppercase tracking-wider mb-0.5">Hours Worked</div>
+                  <div className="text-2xl font-bold text-indigo-700">{hours}</div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
     </div>
   )
@@ -124,12 +138,18 @@ function CalendarCell({ entries, day }) {
               <span className="text-emerald-700 font-semibold">Submitted</span>
             </div>
             <p className="text-gray-500 line-clamp-2 leading-snug">{update.info}</p>
-            {(clock?.clockIn || clock?.clockOut) && (
-              <div className="flex gap-2 pt-0.5">
-                {clock.clockIn  && <span className="bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded font-medium">↑ {clock.clockIn}</span>}
-                {clock.clockOut && <span className="bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded font-medium">↓ {clock.clockOut}</span>}
-              </div>
-            )}
+            {(clock?.clockIn || clock?.clockOut) && (() => {
+              const inTime  = parseTimeText(clock.clockIn)
+              const outTime = parseTimeText(clock.clockOut)
+              const hours   = calcHoursWorked(inTime, outTime)
+              return (
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  {inTime  && <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">↑ {inTime}</span>}
+                  {outTime && <span className="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-medium">↓ {outTime}</span>}
+                  {hours   && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-medium">{hours}</span>}
+                </div>
+              )
+            })()}
           </div>
         ) : future ? (
           <span className="text-gray-300">—</span>
