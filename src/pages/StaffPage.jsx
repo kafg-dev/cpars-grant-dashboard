@@ -122,13 +122,13 @@ function CalendarCell({ entries, day }) {
     )
   }
 
-  // Collect ALL clock events from every row for this staff/day — raw values, no parsing
+  // Collect ALL clock events from every row for this staff/day — display parsed clean times
   const events = []
   entries
     .filter((e) => e.group.id === 'group_mm02nccy')
     .forEach((e) => {
-      if (e.clockIn)  events.push({ type: 'in',  time: e.clockIn })
-      if (e.clockOut) events.push({ type: 'out', time: e.clockOut })
+      if (e.clockIn)  events.push({ type: 'in',  time: parseTimeText(e.clockIn)  || e.clockIn })
+      if (e.clockOut) events.push({ type: 'out', time: parseTimeText(e.clockOut) || e.clockOut })
     })
 
   const hasIn  = events.some((e) => e.type === 'in')
