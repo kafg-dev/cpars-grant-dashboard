@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle, X, FileText } from 'lucide-react'
 import { fetchAllStaff, transformStaffItem } from '../utils/api'
+import { parseTimeText, calcHoursWorked } from '../utils/timeParser'
 
 const REFRESH_INTERVAL = 30
 
@@ -27,6 +28,28 @@ function getWeekDays(weekStart) {
     d.setDate(d.getDate() + i)
     return d
   })
+}
+
+// Sum all clock in/out pairs for a staff member across the given week days
+function calcWeeklyHours(staffEntries, weekDays) {
+  let totalMins = 0
+  weekDays.forEach((day) => {
+    const dk = toDateKey(day)
+    const dayEntries = staffEntries[dk] || []
+    dayEntries
+      .filter((e) => e.group.id === 'group_mm02nccy')
+      .forEach((e) => {
+        if (!e.clockIn || !e.clockOut) return
+        const parsed = calcHoursWorked(parseTimeText(e.clockIn), parseTimeText(e.clockOut))
+        if (!parsed) return
+        const hMatch = parsed.match(/(\d+)h/)
+        const mMatch = parsed.match(/(\d+)m/)
+        totalMins += (hMatch ? parseInt(hMatch[1]) * 60 : 0) + (mMatch ? parseInt(mMatch[1]) : 0)
+      })
+  })
+  if (totalMins === 0) return null
+  const h = Math.floor(totalMins / 60), m = totalMins % 60
+  return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
 function fmtDay(date) {
@@ -364,7 +387,15 @@ export default function StaffPage() {
                       <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
                         {name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-sm font-semibold text-gray-800">{name}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-gray-800">{name}</span>
+                        {(() => {
+                          const hrs = calcWeeklyHours(lookup[name] || {}, weekDays)
+                          return hrs ? (
+                            <div className="text-xs text-indigo-500 font-medium mt-0.5">{hrs} this week</div>
+                          ) : null
+                        })()}
+                      </div>
                     </div>
                   </div>
 
