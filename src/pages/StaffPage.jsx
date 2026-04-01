@@ -51,7 +51,7 @@ function isPast(date) {
 
 // ─── Update Modal ────────────────────────────────────────────────────────────
 
-function UpdateModal({ staffName, date, info, onClose }) {
+function UpdateModal({ staffName, date, updates, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
@@ -66,9 +66,20 @@ function UpdateModal({ staffName, date, info, onClose }) {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Daily Update</div>
-          <p className="text-sm text-gray-700 leading-relaxed">{info}</p>
+        <div className="space-y-3 max-h-80 overflow-y-auto">
+          {updates.map((u, i) => (
+            <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              {updates.length > 1 && (
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  Update {i + 1}
+                </div>
+              )}
+              {updates.length === 1 && (
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Daily Update</div>
+              )}
+              <p className="text-sm text-gray-700 leading-relaxed">{u.info}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -99,7 +110,7 @@ function CalendarCell({ entries, day }) {
 
   const hasIn  = events.some((e) => e.type === 'in')
   const hasOut = events.some((e) => e.type === 'out')
-  const update = entries.find((e) => e.group.id === 'topics')
+  const updates = entries.filter((e) => e.group.id === 'topics' && e.info)
   const [showModal, setShowModal] = useState(false)
 
   return (
@@ -135,14 +146,14 @@ function CalendarCell({ entries, day }) {
         )}
 
         {/* Daily update button */}
-        {update?.info && (
+        {updates.length > 0 && (
           <div className="pt-1 border-t border-gray-200">
             <button
               onClick={(e) => { e.stopPropagation(); setShowModal(true) }}
               className="flex items-center gap-1 text-indigo-500 hover:text-indigo-700 font-medium transition"
             >
               <FileText className="w-3 h-3" />
-              View Update
+              {updates.length > 1 ? `${updates.length} Updates` : 'View Update'}
             </button>
           </div>
         )}
@@ -150,9 +161,9 @@ function CalendarCell({ entries, day }) {
 
       {showModal && (
         <UpdateModal
-          staffName={update.staffName}
-          date={update.date}
-          info={update.info}
+          staffName={updates[0].staffName}
+          date={updates[0].date}
+          updates={updates}
           onClose={() => setShowModal(false)}
         />
       )}
@@ -173,7 +184,14 @@ export default function StaffPage() {
   const loadData = useCallback(async () => {
     try {
       const raw = await fetchAllStaff()
-      setItems(raw.map(transformStaffItem).filter((i) => i.staffName && i.date))
+      const allTransformed = raw.map(transformStaffItem)
+      // Debug: log clock group items to see their actual field values
+      const clockItems = allTransformed.filter((i) => i.group.id === 'group_mm02nccy')
+      console.log('[DEBUG] Total clock items before filter:', clockItems.length)
+      console.log('[DEBUG] Sample clock items:', clockItems.slice(0, 5))
+      const filtered = allTransformed.filter((i) => i.staffName && i.date)
+      console.log('[DEBUG] Clock items surviving filter:', filtered.filter(i => i.group.id === 'group_mm02nccy').length)
+      setItems(filtered)
       setLastUpdated(new Date())
       setCountdown(REFRESH_INTERVAL)
       setError(null)
