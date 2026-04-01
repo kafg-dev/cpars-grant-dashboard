@@ -30,22 +30,49 @@ function getWeekDays(weekStart) {
   })
 }
 
-// Sum all clock in/out pairs for a staff member across the given week days
+// Convert a parsed "H:MM AM/PM" string to total minutes since midnight
+function toMins(t) {
+  if (!t) return null
+  const m = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+  if (!m) return null
+  let h = parseInt(m[1])
+  const mn = parseInt(m[2])
+  const p = m[3].toUpperCase()
+  if (p === 'PM' && h !== 12) h += 12
+  if (p === 'AM' && h === 12) h = 0
+  return h * 60 + mn
+}
+
+// Sum all clock in/out pairs for a staff member across the given week days.
+// Collects all in-times and out-times per day (since Monday.com stores them
+// as separate rows), sorts each list, then pairs them up to sum durations.
 function calcWeeklyHours(staffEntries, weekDays) {
   let totalMins = 0
   weekDays.forEach((day) => {
     const dk = toDateKey(day)
-    const dayEntries = staffEntries[dk] || []
-    dayEntries
-      .filter((e) => e.group.id === 'group_mm02nccy')
-      .forEach((e) => {
-        if (!e.clockIn || !e.clockOut) return
-        const parsed = calcHoursWorked(parseTimeText(e.clockIn), parseTimeText(e.clockOut))
-        if (!parsed) return
-        const hMatch = parsed.match(/(\d+)h/)
-        const mMatch = parsed.match(/(\d+)m/)
-        totalMins += (hMatch ? parseInt(hMatch[1]) * 60 : 0) + (mMatch ? parseInt(mMatch[1]) : 0)
-      })
+    const dayEntries = (staffEntries[dk] || []).filter((e) => e.group.id === 'group_mm02nccy')
+
+    const ins  = []
+    const outs = []
+    dayEntries.forEach((e) => {
+      const inParsed  = e.clockIn  ? toMins(parseTimeText(e.clockIn))  : null
+      const outParsed = e.clockOut ? toMins(parseTimeText(e.clockOut)) : null
+      if (inParsed  !== null) ins.push(inParsed)
+      if (outParsed !== null) outs.push(outParsed)
+    })
+
+    ins.sort((a, b) => a - b)
+    outs.sort((a, b) => a - b)
+
+    // Pair each in with the next out that comes after it
+    let oi = 0
+    ins.forEach((inTime) => {
+      while (oi < outs.length && outs[oi] <= inTime) oi++
+      if (oi < outs.length) {
+        totalMins += outs[oi] - inTime
+        oi++
+      }
+    })
   })
   if (totalMins === 0) return null
   const h = Math.floor(totalMins / 60), m = totalMins % 60
