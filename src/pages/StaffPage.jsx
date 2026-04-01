@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw, Users, CheckCircle, Clock, AlertCircle, X, FileText } from 'lucide-react'
 import { fetchAllStaff, transformStaffItem } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
@@ -45,6 +45,32 @@ function isPast(date) {
   return date < today
 }
 
+// ─── Update Modal ────────────────────────────────────────────────────────────
+
+function UpdateModal({ staffName, date, info, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="font-bold text-gray-900 text-lg">{staffName}</div>
+            <div className="text-sm text-gray-500">
+              {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Daily Update</div>
+          <p className="text-sm text-gray-700 leading-relaxed">{info}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Calendar Cell ─────────────────────────────────────────────────────────────
 
 function CalendarCell({ entries, day }) {
@@ -67,59 +93,66 @@ function CalendarCell({ entries, day }) {
       if (e.clockOut) events.push({ type: 'out', time: e.clockOut })
     })
 
-  const hasIn    = events.some((e) => e.type === 'in')
-  const hasOut   = events.some((e) => e.type === 'out')
-  const update   = entries.find((e) => e.group.id === 'topics')
-  const [expanded, setExpanded] = useState(false)
+  const hasIn  = events.some((e) => e.type === 'in')
+  const hasOut = events.some((e) => e.type === 'out')
+  const update = entries.find((e) => e.group.id === 'topics')
+  const [showModal, setShowModal] = useState(false)
 
   return (
-    <div className={`border rounded-lg p-2 text-xs space-y-1.5 ${
-      hasIn && hasOut ? 'bg-emerald-50 border-emerald-200' :
-      hasIn           ? 'bg-amber-50  border-amber-200'   :
-                        'bg-gray-50   border-gray-200'
-    }`}>
-      {/* Clock events */}
-      {events.length > 0 ? (
-        events.map((ev, i) => (
-          <div key={i} className="flex items-center gap-1">
-            <span className={`font-bold w-3 ${ev.type === 'in' ? 'text-emerald-500' : 'text-rose-400'}`}>
-              {ev.type === 'in' ? '↑' : '↓'}
-            </span>
-            <span className={`font-semibold ${ev.type === 'in' ? 'text-emerald-700' : 'text-rose-600'}`}>
-              {ev.time}
-            </span>
-          </div>
-        ))
-      ) : (
-        <>
-          <div className="flex items-center gap-1">
-            <span className="font-bold w-3 text-gray-300">↑</span>
-            <span className="text-gray-400 font-semibold">NONE</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-bold w-3 text-gray-300">↓</span>
-            <span className="text-gray-400 font-semibold">NONE</span>
-          </div>
-        </>
-      )}
+    <>
+      <div className={`border rounded-lg p-2 text-xs space-y-1.5 ${
+        hasIn && hasOut ? 'bg-emerald-50 border-emerald-200' :
+        hasIn           ? 'bg-amber-50  border-amber-200'   :
+                          'bg-gray-50   border-gray-200'
+      }`}>
+        {/* Clock events */}
+        {events.length > 0 ? (
+          events.map((ev, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <span className={`font-bold w-3 ${ev.type === 'in' ? 'text-emerald-500' : 'text-rose-400'}`}>
+                {ev.type === 'in' ? '↑' : '↓'}
+              </span>
+              <span className={`font-semibold ${ev.type === 'in' ? 'text-emerald-700' : 'text-rose-600'}`}>
+                {ev.time}
+              </span>
+            </div>
+          ))
+        ) : (
+          <>
+            <div className="flex items-center gap-1">
+              <span className="font-bold w-3 text-gray-300">↑</span>
+              <span className="text-gray-400 font-semibold">NONE</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="font-bold w-3 text-gray-300">↓</span>
+              <span className="text-gray-400 font-semibold">NONE</span>
+            </div>
+          </>
+        )}
 
-      {/* Daily update */}
-      {update?.info && (
-        <div className="pt-1 border-t border-gray-200">
-          <p className={`text-gray-500 leading-snug ${expanded ? '' : 'line-clamp-2'}`}>
-            {update.info}
-          </p>
-          {update.info.length > 80 && (
+        {/* Daily update button */}
+        {update?.info && (
+          <div className="pt-1 border-t border-gray-200">
             <button
-              onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
-              className="text-indigo-500 hover:text-indigo-700 font-medium mt-0.5"
+              onClick={(e) => { e.stopPropagation(); setShowModal(true) }}
+              className="flex items-center gap-1 text-indigo-500 hover:text-indigo-700 font-medium transition"
             >
-              {expanded ? 'less' : 'more'}
+              <FileText className="w-3 h-3" />
+              View Update
             </button>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <UpdateModal
+          staffName={update.staffName}
+          date={update.date}
+          info={update.info}
+          onClose={() => setShowModal(false)}
+        />
       )}
-    </div>
+    </>
   )
 }
 
