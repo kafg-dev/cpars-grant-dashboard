@@ -7,7 +7,11 @@ const REFRESH_INTERVAL = 30
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
 function toDateKey(date) {
-  return date.toISOString().split('T')[0] // "YYYY-MM-DD"
+  // Use local date parts to avoid UTC timezone shifts causing off-by-one-day bugs
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function getWeekStart(date) {
