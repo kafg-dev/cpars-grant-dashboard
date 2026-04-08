@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { RefreshCw, Plus, MessageSquare, X, Send, ExternalLink, CheckCircle, Clock, Circle, Menu, FileText, ChevronDown } from 'lucide-react'
-import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus, fetchSubitems, fetchTaskBoardColumns } from '../utils/api'
+import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus, fetchSubitems } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
 
@@ -288,8 +288,13 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
           {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
         </div>
 
-        {/* Status picker */}
-        <StatusPicker task={task} onChanged={onChanged} />
+        {/* Status: picker if column exists, static badge otherwise */}
+        {task.statusColumnId
+          ? <StatusPicker task={task} onChanged={onChanged} />
+          : task.status
+            ? <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyle(task.status)}`}>{statusIcon(task.status)}{task.status}</span>
+            : null
+        }
 
         {/* Notes link */}
         {task.notesUrl && (
@@ -359,7 +364,6 @@ export default function TasksPage({ onMenuClick }) {
   }, [])
 
   useEffect(() => {
-    fetchTaskBoardColumns() // debug — remove after finding status column ID
     loadData()
     const interval = setInterval(loadData, REFRESH_INTERVAL * 1000)
     return () => clearInterval(interval)

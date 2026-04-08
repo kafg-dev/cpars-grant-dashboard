@@ -215,6 +215,9 @@ export async function fetchAllTasks() {
     }`
     const data = await monday(query)
     const page = data.boards[0].items_page
+    if (items.length === 0 && page.items.length > 0) {
+      console.log('[TASK item columns]', page.items[0].column_values.map(c => `${c.id}:${c.column?.title}(text=${c.text})`))
+    }
     items = items.concat(page.items)
     cursor = page.cursor
   } while (cursor)
@@ -231,7 +234,11 @@ export async function fetchSubitems(itemId) {
     }
   }`
   const data = await monday(query)
-  return (data.items?.[0]?.subitems || []).map(transformTask)
+  const subs = data.items?.[0]?.subitems || []
+  if (subs.length > 0) {
+    console.log('[SUBITEM columns]', subs[0].column_values.map(c => `${c.id}:${c.column?.title}(text=${c.text})`))
+  }
+  return subs.map(transformTask)
 }
 
 export function transformTask(item) {
@@ -255,15 +262,19 @@ export function transformTask(item) {
     return ''
   }
 
-  const statusCol = (item.column_values || []).find(c =>
-    ['status', 'state', 'progress', 'task status'].includes((c.column?.title || '').toLowerCase())
-  )
+  // Status column: match by title OR fall back to first column whose value has a "label" key (Monday.com status columns store {"label":"..."})
+  const statusCol = (item.column_values || []).find(c => {
+    const title = (c.column?.title || '').toLowerCase()
+    if (['status', 'state', 'progress', 'task status', 'label'].includes(title)) return true
+    if (c.value) { try { const v = JSON.parse(c.value); return 'label' in v } catch {} }
+    return false
+  })
 
   return {
     id:             item.id,
     name:           item.name,
     group:          item.group,
-    status:         statusCol?.text || '',
+    status:         statusCol?.text || (() => { try { return JSON.parse(statusCol?.value || '')?.label?.text || '' } catch { return '' } })(),
     statusColumnId: statusCol?.id || '',
     timeline:       get('timeline'),
     notes:          get('notes') || getLink('notes'),
