@@ -1,4 +1,4 @@
-import { Award, Users, PawPrint, LayoutGrid, ChevronRight, X } from 'lucide-react'
+import { Award, Users, PawPrint, LayoutGrid, ChevronRight, X, ClipboardList } from 'lucide-react'
 
 const NAV_ITEMS = [
   {
@@ -11,7 +11,8 @@ const NAV_ITEMS = [
     section: 'OPERATIONS',
     items: [
       { id: 'staff',  label: 'Staff',          icon: Users,      live: true },
-      { id: 'animals',label: 'Animals',        icon: PawPrint,   live: true  },
+      { id: 'animals',label: 'Animals',        icon: PawPrint,      live: true  },
+      { id: 'tasks',  label: 'Tasks',          icon: ClipboardList, live: true  },
     ],
   },
   {

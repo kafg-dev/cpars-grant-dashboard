@@ -1,0 +1,452 @@
+import { useState, useEffect, useCallback } from 'react'
+import { RefreshCw, Plus, MessageSquare, X, Send, ExternalLink, CheckCircle, Clock, Circle, Menu, FileText } from 'lucide-react'
+import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, TASKS_BOARD_ID } from '../utils/api'
+
+const REFRESH_INTERVAL = 30
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ value }) {
+  if (!value) return <span className="text-xs text-gray-300">—</span>
+  const lower = value.toLowerCase()
+  const style =
+    lower.includes('done')        ? 'bg-emerald-100 text-emerald-700' :
+    lower.includes('working')     ? 'bg-amber-100   text-amber-700'   :
+    lower.includes('stuck')       ? 'bg-red-100     text-red-600'     :
+    lower.includes('review')      ? 'bg-purple-100  text-purple-700'  :
+                                    'bg-gray-100    text-gray-500'
+  const icon =
+    lower.includes('done')    ? <CheckCircle className="w-3 h-3" /> :
+    lower.includes('working') ? <Clock className="w-3 h-3" />       :
+                                <Circle className="w-3 h-3" />
+
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${style}`}>
+      {icon}{value}
+    </span>
+  )
+}
+
+// ─── Updates + Add Update Modal ───────────────────────────────────────────────
+
+function UpdatesModal({ task, onClose }) {
+  const [updates, setUpdates]   = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [body, setBody]         = useState('')
+  const [sending, setSending]   = useState(false)
+  const [error, setError]       = useState(null)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    fetchTaskUpdates(task.id).then((data) => {
+      setUpdates(data)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [task.id])
+
+  useEffect(() => { load() }, [load])
+
+  async function handleSend() {
+    if (!body.trim()) return
+    setSending(true)
+    setError(null)
+    try {
+      await createTaskUpdate(task.id, body.trim())
+      setBody('')
+      load()
+    } catch {
+      setError('Failed to send update. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-start justify-between">
+          <div>
+            <div className="font-bold text-gray-900 text-base leading-snug">{task.name}</div>
+            <div className="flex items-center gap-2 mt-1.5">
+              <StatusBadge value={task.status} />
+              {task.group?.title && (
+                <span className="text-xs text-gray-400">{task.group.title}</span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition ml-3 shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Updates list */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
+            </div>
+          ) : updates.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No updates yet. Be the first to add one!</p>
+          ) : (
+            updates.map((u) => {
+              const images = (u.assets || []).filter(a => ['jpg','jpeg','png','gif','webp'].includes((a.file_extension||'').toLowerCase().replace(/^\./,'')))
+              const others = (u.assets || []).filter(a => !images.includes(a))
+              return (
+                <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+                  <div className="flex justify-end">
+                    <span className="text-xs text-gray-400">
+                      {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  {u.text_body && <p className="text-sm text-gray-700 leading-relaxed">{u.text_body}</p>}
+                  {images.length > 0 && (
+                    <div className={`grid gap-2 ${images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {images.map(a => (
+                        <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer">
+                          <img src={a.url} alt={a.name} className="w-full rounded-lg object-cover max-h-40 hover:opacity-90 transition" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {others.map(a => (
+                    <a key={a.id} href={`https://docs.google.com/viewer?url=${encodeURIComponent(a.url)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
+                      <FileText className="w-3.5 h-3.5" />{a.name}
+                    </a>
+                  ))}
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Add update */}
+        <div className="px-6 pb-5 pt-3 border-t border-gray-100 space-y-2">
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <div className="flex gap-2">
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Write an update…"
+              rows={2}
+              className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend() }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={sending || !body.trim()}
+              className="self-end px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400">Cmd+Enter to send</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── New Task Modal ───────────────────────────────────────────────────────────
+
+function NewTaskModal({ groups, onClose, onCreated }) {
+  const [name, setName]       = useState('')
+  const [groupId, setGroupId] = useState(groups[0]?.id || '')
+  const [saving, setSaving]   = useState(false)
+  const [error, setError]     = useState(null)
+
+  async function handleCreate() {
+    if (!name.trim() || !groupId) return
+    setSaving(true)
+    setError(null)
+    try {
+      await createTask(groupId, name.trim())
+      onCreated()
+      onClose()
+    } catch {
+      setError('Failed to create task. Please try again.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-gray-900 text-lg">New Task</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Task name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="What needs to be done?"
+              autoFocus
+              className="mt-1 w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Group</label>
+            <select
+              value={groupId}
+              onChange={(e) => setGroupId(e.target.value)}
+              className="mt-1 w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            >
+              {groups.map(g => (
+                <option key={g.id} value={g.id}>{g.title}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {error && <p className="text-xs text-red-500">{error}</p>}
+
+        <div className="flex gap-2 pt-1">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600">
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={saving || !name.trim()}
+            className="flex-1 px-4 py-2.5 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition disabled:opacity-40 font-semibold"
+          >
+            {saving ? 'Creating…' : 'Create Task'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Group color helper ───────────────────────────────────────────────────────
+
+function groupAccent(title = '') {
+  const t = title.toLowerCase()
+  if (t.includes('done'))         return { bar: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' }
+  if (t.includes('social'))       return { bar: 'bg-pink-500',    text: 'text-pink-600',    bg: 'bg-pink-50'    }
+  if (t.includes('fundraising') || t.includes('grant') || t.includes('donor')) {
+                                   return { bar: 'bg-fuchsia-500', text: 'text-fuchsia-600', bg: 'bg-fuchsia-50' }
+  }
+  if (t.includes('arfss'))        return { bar: 'bg-teal-500',    text: 'text-teal-600',    bg: 'bg-teal-50'    }
+  if (t.includes('rescue') || t.includes('alliance') || t.includes('shiftgives')) {
+                                   return { bar: 'bg-blue-500',   text: 'text-blue-600',    bg: 'bg-blue-50'    }
+  }
+  return                           { bar: 'bg-indigo-500',        text: 'text-indigo-600',  bg: 'bg-indigo-50'  }
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function TasksPage({ onMenuClick }) {
+  const [tasks, setTasks]         = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL)
+  const [selectedTask, setSelectedTask] = useState(null)
+  const [showNewTask, setShowNewTask]   = useState(false)
+
+  const loadData = useCallback(async () => {
+    try {
+      const raw = await fetchAllTasks()
+      setTasks(raw.map(transformTask))
+      setLastUpdated(new Date())
+      setCountdown(REFRESH_INTERVAL)
+      setError(null)
+    } catch (err) {
+      setError('Could not reach Monday.com. Will retry automatically.')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+    const interval = setInterval(loadData, REFRESH_INTERVAL * 1000)
+    return () => clearInterval(interval)
+  }, [loadData])
+
+  useEffect(() => {
+    if (!lastUpdated) return
+    const t = setInterval(() => setCountdown((p) => (p <= 1 ? REFRESH_INTERVAL : p - 1)), 1000)
+    return () => clearInterval(t)
+  }, [lastUpdated])
+
+  // Group tasks by group
+  const groupMap = {}
+  tasks.forEach((t) => {
+    const gid = t.group?.id
+    if (!groupMap[gid]) groupMap[gid] = { id: gid, title: t.group?.title || '', tasks: [] }
+    groupMap[gid].tasks.push(t)
+  })
+  const groups = Object.values(groupMap)
+
+  // Stats
+  const total    = tasks.length
+  const done     = tasks.filter(t => t.status?.toLowerCase().includes('done')).length
+  const inProg   = tasks.filter(t => t.status?.toLowerCase().includes('working')).length
+  const noStatus = tasks.filter(t => !t.status).length
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button onClick={onMenuClick} className="lg:hidden text-gray-500 hover:text-gray-700 p-1 -ml-1">
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Program Management</h1>
+              </div>
+              <p className="text-sm text-gray-500 mt-0.5">
+                CPARS · Live from Monday.com
+                {lastUpdated && <span className="ml-2 text-gray-400">· Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNewTask(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Task</span>
+            </button>
+            <button
+              onClick={loadData}
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{loading ? 'Refreshing…' : `Refresh in ${countdown}s`}</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-auto">
+        <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-5">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{error}
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Tasks', value: total,    color: 'indigo' },
+              { label: 'Done',        value: done,     color: 'emerald' },
+              { label: 'In Progress', value: inProg,   color: 'amber' },
+              { label: 'Not Started', value: noStatus, color: 'gray' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className={`bg-${color}-50 rounded-xl p-4 border border-white shadow-sm`}>
+                <div className={`text-2xl font-bold text-${color}-700`}>{value}</div>
+                <div className="text-xs text-gray-500 mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Task groups */}
+          {loading ? (
+            <div className="space-y-4">
+              {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {groups.map((group) => {
+                const accent = groupAccent(group.title)
+                return (
+                  <div key={group.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    {/* Group header */}
+                    <div className={`flex items-center gap-3 px-4 py-3 ${accent.bg} border-b border-gray-100`}>
+                      <div className={`w-1 h-5 rounded-full ${accent.bar}`} />
+                      <span className={`font-bold text-sm ${accent.text}`}>{group.title}</span>
+                      <span className="text-xs text-gray-400 ml-1">{group.tasks.length} tasks</span>
+                    </div>
+
+                    {/* Tasks */}
+                    <div className="divide-y divide-gray-50">
+                      {group.tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition group"
+                        >
+                          {/* Status dot */}
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${
+                            task.status?.toLowerCase().includes('done')    ? 'bg-emerald-400' :
+                            task.status?.toLowerCase().includes('working') ? 'bg-amber-400'   :
+                            task.status?.toLowerCase().includes('stuck')   ? 'bg-red-400'     :
+                                                                             'bg-gray-200'
+                          }`} />
+
+                          {/* Task name */}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-gray-800 font-medium truncate">{task.name}</div>
+                            {task.timeline && (
+                              <div className="text-xs text-gray-400 mt-0.5">{task.timeline}</div>
+                            )}
+                          </div>
+
+                          {/* Status */}
+                          <div className="hidden sm:block shrink-0">
+                            <StatusBadge value={task.status} />
+                          </div>
+
+                          {/* Notes link */}
+                          {task.notesUrl && (
+                            <a href={task.notesUrl} target="_blank" rel="noopener noreferrer"
+                              className="shrink-0 text-indigo-400 hover:text-indigo-600 transition"
+                              title="Open notes">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+
+                          {/* Updates button */}
+                          <button
+                            onClick={() => setSelectedTask(task)}
+                            className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition opacity-0 group-hover:opacity-100 px-2 py-1 rounded-lg hover:bg-indigo-50"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Updates</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
+      {selectedTask && (
+        <UpdatesModal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
+      {showNewTask && (
+        <NewTaskModal
+          groups={groups}
+          onClose={() => setShowNewTask(false)}
+          onCreated={loadData}
+        />
+      )}
+    </div>
+  )
+}

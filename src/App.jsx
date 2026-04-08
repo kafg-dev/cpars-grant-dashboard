@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import GrantsPage from './pages/GrantsPage'
 import StaffPage from './pages/StaffPage'
 import AnimalsPage from './pages/AnimalsPage'
+import TasksPage from './pages/TasksPage'
 
 export default function App() {
   const [activePage, setActivePage] = useState('grants')
@@ -34,6 +35,7 @@ export default function App() {
         {activePage === 'grants'  && <GrantsPage  onMenuClick={() => setSidebarOpen(true)} />}
         {activePage === 'staff'   && <StaffPage   onMenuClick={() => setSidebarOpen(true)} />}
         {activePage === 'animals' && <AnimalsPage onMenuClick={() => setSidebarOpen(true)} />}
+        {activePage === 'tasks'   && <TasksPage  onMenuClick={() => setSidebarOpen(true)} />}
       </div>
     </div>
   )

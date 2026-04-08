@@ -1,13 +1,13 @@
 const API_KEY = import.meta.env.VITE_MONDAY_API_KEY
 
-async function monday(query) {
+async function monday(query, variables = {}) {
   const res = await fetch('/monday-api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: API_KEY,
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify(Object.keys(variables).length ? { query, variables } : { query }),
   })
   if (!res.ok) throw new Error(`Monday API error: ${res.status}`)
   const json = await res.json()
@@ -181,4 +181,75 @@ export function transformAnimal(item) {
     petfinderLink: getLink('petfinder link', 'petfinder'),
     driveLink:   getLink('drive link', 'drive'),
   }
+}
+
+// ─── Tasks (Program Management) ──────────────────────────────────────────────
+
+export const TASKS_BOARD_ID = '18398809584'
+
+export async function fetchAllTasks() {
+  return fetchAllItems(TASKS_BOARD_ID)
+}
+
+export function transformTask(item) {
+  const byTitle = {}
+  const byTitleRaw = {}
+  item.column_values.forEach((c) => {
+    const key = (c.column?.title || '').toLowerCase().trim()
+    byTitle[key] = c.text || ''
+    byTitleRaw[key] = c
+  })
+
+  const get = (...titles) => {
+    for (const t of titles) { const v = byTitle[t.toLowerCase()]; if (v) return v }
+    return ''
+  }
+  const getLink = (...titles) => {
+    for (const t of titles) {
+      const c = byTitleRaw[t.toLowerCase()]
+      if (c?.value) { try { return JSON.parse(c.value).url || '' } catch {} }
+    }
+    return ''
+  }
+
+  return {
+    id:       item.id,
+    name:     item.name,
+    group:    item.group,
+    status:   get('status'),
+    timeline: get('timeline'),
+    notes:    get('notes') || getLink('notes'),
+    notesUrl: getLink('notes'),
+  }
+}
+
+export async function fetchTaskUpdates(itemId) {
+  const query = `{
+    items(ids: [${itemId}]) {
+      updates(limit: 50) {
+        id text_body created_at
+        assets { id name url file_extension }
+      }
+    }
+  }`
+  const data = await monday(query)
+  return data.items?.[0]?.updates || []
+}
+
+export async function createTaskUpdate(itemId, body) {
+  const query = `
+    mutation CreateUpdate($itemId: ID!, $body: String!) {
+      create_update(item_id: $itemId, body: $body) { id }
+    }
+  `
+  return monday(query, { itemId: String(itemId), body })
+}
+
+export async function createTask(groupId, name) {
+  const query = `
+    mutation CreateItem($boardId: ID!, $groupId: String!, $name: String!) {
+      create_item(board_id: $boardId, group_id: $groupId, item_name: $name) { id name }
+    }
+  `
+  return monday(query, { boardId: String(TASKS_BOARD_ID), groupId, name })
 }
