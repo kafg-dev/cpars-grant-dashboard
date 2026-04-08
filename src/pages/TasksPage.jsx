@@ -283,8 +283,7 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
           {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
         </div>
 
-        {/* Status picker */}
-        <StatusPicker task={task} onChanged={onChanged} />
+        {/* Status — hidden until Monday.com Multi-level board API exposes color columns */}
 
         {/* Notes link */}
         {task.notesUrl && (

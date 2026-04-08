@@ -223,17 +223,12 @@ export async function fetchSubitems(itemId) {
     items(ids: [${itemId}]) {
       subitems {
         id name
-        board { id }
         column_values { id text value column { title } }
       }
     }
   }`
   const data = await mondayTasks(query)
   const subs = data.items?.[0]?.subitems || []
-  if (subs.length > 0) {
-    console.log('[subitem board id]', subs[0].board?.id)
-    console.log('[subitem columns]', subs[0].column_values.map(c => `${c.column?.title}(${c.id})`))
-  }
   return subs.map(transformTask)
 }
 
