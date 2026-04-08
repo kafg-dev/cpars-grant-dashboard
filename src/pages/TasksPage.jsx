@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { RefreshCw, Plus, MessageSquare, X, Send, ExternalLink, CheckCircle, Clock, Circle, Menu, FileText, ChevronDown } from 'lucide-react'
-import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus } from '../utils/api'
+import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus, fetchSubitems } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
 
@@ -232,8 +232,26 @@ function NewTaskModal({ groups, onClose, onCreated }) {
 // ─── Task Row (recursive — handles subitems and sub-subitems) ────────────────
 
 function TaskRow({ task, depth, onSelect, onChanged }) {
-  const [expanded, setExpanded] = useState(true)
-  const hasChildren = task.subitems?.length > 0
+  const [expanded, setExpanded]   = useState(false)
+  const [subitems, setSubitems]   = useState([])
+  const [loadingSubs, setLoadingSubs] = useState(false)
+  const [loaded, setLoaded]       = useState(false)
+  const hasChildren = task.hasSubitems
+
+  async function handleExpand() {
+    const next = !expanded
+    setExpanded(next)
+    if (next && !loaded) {
+      setLoadingSubs(true)
+      try {
+        const subs = await fetchSubitems(task.id)
+        setSubitems(subs)
+        setLoaded(true)
+      } finally {
+        setLoadingSubs(false)
+      }
+    }
+  }
 
   const indent = depth === 0 ? 'pl-4' : depth === 1 ? 'pl-10' : 'pl-16'
   const bgHover = depth === 0 ? 'hover:bg-gray-50' : depth === 1 ? 'hover:bg-indigo-50/40' : 'hover:bg-purple-50/40'
@@ -245,8 +263,11 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
         {/* Expand arrow or spacer */}
         <div className="w-4 shrink-0">
           {hasChildren ? (
-            <button onClick={() => setExpanded(e => !e)} className="text-gray-400 hover:text-gray-600 transition">
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`} />
+            <button onClick={handleExpand} className="text-gray-400 hover:text-gray-600 transition">
+              {loadingSubs
+                ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                : <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`} />
+              }
             </button>
           ) : (
             <span className="block w-3.5 h-3.5" />
@@ -288,8 +309,8 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
         </button>
       </div>
 
-      {/* Subitems */}
-      {hasChildren && expanded && task.subitems.map((sub) => (
+      {/* Subitems — loaded on demand */}
+      {expanded && subitems.map((sub) => (
         <TaskRow key={sub.id} task={sub} depth={depth + 1} onSelect={onSelect} onChanged={onChanged} />
       ))}
     </>

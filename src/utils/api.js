@@ -199,11 +199,8 @@ export async function fetchAllTasks() {
           items {
             id name
             group { id title }
-            column_values { id title text value column { title } }
-            subitems {
-              id name
-              column_values { id title text value column { title } }
-            }
+            column_values { id text value column { title } }
+            subitems { id }
           }
         }
       }
@@ -214,6 +211,19 @@ export async function fetchAllTasks() {
     cursor = page.cursor
   } while (cursor)
   return items
+}
+
+export async function fetchSubitems(itemId) {
+  const query = `{
+    items(ids: [${itemId}]) {
+      subitems {
+        id name
+        column_values { id text value column { title } }
+      }
+    }
+  }`
+  const data = await monday(query)
+  return (data.items?.[0]?.subitems || []).map(transformTask)
 }
 
 export function transformTask(item) {
@@ -252,7 +262,7 @@ export function transformTask(item) {
     timeline:       get('timeline'),
     notes:          get('notes') || getLink('notes'),
     notesUrl:       getLink('notes'),
-    subitems:       (item.subitems || []).map(transformTask),
+    hasSubitems:    (item.subitems?.length ?? 0) > 0,
   }
 }
 
