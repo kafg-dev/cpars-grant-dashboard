@@ -203,10 +203,6 @@ export async function fetchAllTasks() {
             subitems {
               id name
               column_values { id title text value column { title } }
-              subitems {
-                id name
-                column_values { id title text value column { title } }
-              }
             }
           }
         }
@@ -241,13 +237,17 @@ export function transformTask(item) {
     return ''
   }
 
-  const statusCol = (item.column_values || []).find(c => (c.column?.title || '').toLowerCase() === 'status')
+  const statusCol = (item.column_values || []).find(c =>
+    ['status', 'state', 'progress', 'task status'].includes((c.column?.title || '').toLowerCase())
+  )
+  // Debug: log column titles for first item only
+  if (!item.group) console.log('[TASKS columns]', (item.column_values||[]).map(c => `${c.id}:${c.column?.title}=${c.text}`))
 
   return {
     id:             item.id,
     name:           item.name,
     group:          item.group,
-    status:         get('status'),
+    status:         statusCol?.text || '',
     statusColumnId: statusCol?.id || '',
     timeline:       get('timeline'),
     notes:          get('notes') || getLink('notes'),
