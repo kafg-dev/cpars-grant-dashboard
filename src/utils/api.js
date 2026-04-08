@@ -205,7 +205,6 @@ export async function fetchAllTasks() {
             id name
             group { id title }
             column_values { id text value column { title } }
-            statusCol: column_values(ids: ["color_mkv6tatz"]) { id text value }
             subitems { id }
           }
         }
@@ -224,15 +223,16 @@ export async function fetchSubitems(itemId) {
     items(ids: [${itemId}]) {
       subitems {
         id name
+        board { id }
         column_values { id text value column { title } }
-        statusCol: column_values(ids: ["color_mkv6tatz"]) { id text value }
       }
     }
   }`
   const data = await mondayTasks(query)
   const subs = data.items?.[0]?.subitems || []
   if (subs.length > 0) {
-    console.log('[subitem statusCol]', JSON.stringify(subs[0].statusCol), 'text:', subs[0].statusCol?.[0]?.text)
+    console.log('[subitem board id]', subs[0].board?.id)
+    console.log('[subitem columns]', subs[0].column_values.map(c => `${c.column?.title}(${c.id})`))
   }
   return subs.map(transformTask)
 }
