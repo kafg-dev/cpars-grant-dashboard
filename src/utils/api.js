@@ -120,7 +120,6 @@ export async function fetchAnimalUpdates(itemId) {
         id
         text_body
         created_at
-        creator { name }
         assets {
           id
           name

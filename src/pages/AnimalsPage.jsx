@@ -46,8 +46,7 @@ function UpdatesModal({ animal, onClose }) {
               const others = (u.assets || []).filter(a => !images.includes(a) && !videos.includes(a))
               return (
                 <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-indigo-600">{u.creator?.name || 'Unknown'}</span>
+                  <div className="flex justify-end">
                     <span className="text-xs text-gray-400">
                       {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
