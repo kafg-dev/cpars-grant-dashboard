@@ -283,13 +283,8 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
           {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
         </div>
 
-        {/* Status: picker if column exists, static badge otherwise */}
-        {task.statusColumnId
-          ? <StatusPicker task={task} onChanged={onChanged} />
-          : task.status
-            ? <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusStyle(task.status)}`}>{statusIcon(task.status)}{task.status}</span>
-            : null
-        }
+        {/* Status picker */}
+        <StatusPicker task={task} onChanged={onChanged} />
 
         {/* Notes link */}
         {task.notesUrl && (

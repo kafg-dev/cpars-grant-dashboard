@@ -205,6 +205,7 @@ export async function fetchAllTasks() {
             id name
             group { id title }
             column_values { id text value column { title } }
+            statusCol: column_values(ids: ["color_mkv6tatz"]) { id text value }
             subitems { id }
           }
         }
@@ -224,6 +225,7 @@ export async function fetchSubitems(itemId) {
       subitems {
         id name
         column_values { id text value column { title } }
+        statusCol: column_values(ids: ["color_mkv6tatz"]) { id text value }
       }
     }
   }`
@@ -253,20 +255,19 @@ export function transformTask(item) {
     return ''
   }
 
-  // Status column: match by title OR fall back to first column whose value has a "label" key (Monday.com status columns store {"label":"..."})
-  const statusCol = (item.column_values || []).find(c => {
+  // Status: try general column_values first, then fall back to explicitly-fetched statusCol
+  const statusFromGeneral = (item.column_values || []).find(c => {
     const title = (c.column?.title || '').toLowerCase()
-    if (['status', 'state', 'progress', 'task status', 'label'].includes(title)) return true
-    if (c.value) { try { const v = JSON.parse(c.value); return 'label' in v } catch {} }
-    return false
+    return ['status', 'state', 'progress', 'task status'].includes(title)
   })
+  const statusColData = statusFromGeneral || item.statusCol?.[0] || null
 
   return {
     id:             item.id,
     name:           item.name,
     group:          item.group,
-    status:         statusCol?.text || (() => { try { return JSON.parse(statusCol?.value || '')?.label?.text || '' } catch { return '' } })(),
-    statusColumnId: statusCol?.id || '',
+    status:         statusColData?.text || '',
+    statusColumnId: statusColData ? 'color_mkv6tatz' : '',
     timeline:       get('timeline'),
     notes:          get('notes') || getLink('notes'),
     notesUrl:       getLink('notes'),
