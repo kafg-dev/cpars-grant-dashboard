@@ -215,9 +215,6 @@ export async function fetchAllTasks() {
     }`
     const data = await monday(query)
     const page = data.boards[0].items_page
-    if (items.length === 0 && page.items.length > 0) {
-      console.log('[TASK item columns]', page.items[0].column_values.map(c => `${c.id}:${c.column?.title}(text=${c.text})`))
-    }
     items = items.concat(page.items)
     cursor = page.cursor
   } while (cursor)
@@ -235,9 +232,6 @@ export async function fetchSubitems(itemId) {
   }`
   const data = await monday(query)
   const subs = data.items?.[0]?.subitems || []
-  if (subs.length > 0) {
-    console.log('[SUBITEM columns]', subs[0].column_values.map(c => `${c.id}:${c.column?.title}(text=${c.text})`))
-  }
   return subs.map(transformTask)
 }
 

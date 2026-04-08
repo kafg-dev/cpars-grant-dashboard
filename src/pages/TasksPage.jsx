@@ -274,13 +274,8 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
           )}
         </div>
 
-        {/* Status dot */}
-        <div className={`w-2 h-2 rounded-full shrink-0 ${
-          task.status?.toLowerCase().includes('done')    ? 'bg-emerald-400' :
-          task.status?.toLowerCase().includes('working') ? 'bg-amber-400'   :
-          task.status?.toLowerCase().includes('stuck')   ? 'bg-red-400'     :
-                                                           'bg-gray-200'
-        }`} />
+        {/* Depth indicator dot */}
+        <div className={`w-2 h-2 rounded-full shrink-0 ${depth === 0 ? 'bg-indigo-200' : 'bg-gray-200'}`} />
 
         {/* Name */}
         <div className="flex-1 min-w-0">
@@ -393,10 +388,10 @@ export default function TasksPage({ onMenuClick }) {
   const groups = Object.values(groupMap)
 
   // Stats
-  const total    = tasks.length
-  const done     = tasks.filter(t => t.status?.toLowerCase().includes('done')).length
-  const inProg   = tasks.filter(t => t.status?.toLowerCase().includes('working')).length
-  const noStatus = tasks.filter(t => !t.status).length
+  const total      = tasks.length
+  const withSubs   = tasks.filter(t => t.hasSubitems).length
+  const withNotes  = tasks.filter(t => t.notesUrl).length
+  const groupCount = groups.length
 
   return (
     <div className="flex flex-col h-full">
@@ -443,10 +438,10 @@ export default function TasksPage({ onMenuClick }) {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Total Tasks', value: total,    bg: 'bg-indigo-50',  val: 'text-indigo-700'  },
-              { label: 'Done',        value: done,     bg: 'bg-emerald-50', val: 'text-emerald-700' },
-              { label: 'In Progress', value: inProg,   bg: 'bg-amber-50',   val: 'text-amber-700'   },
-              { label: 'Not Started', value: noStatus, bg: 'bg-gray-50',    val: 'text-gray-700'    },
+              { label: 'Total Tasks',    value: total,      bg: 'bg-indigo-50',  val: 'text-indigo-700'  },
+              { label: 'Groups',         value: groupCount, bg: 'bg-purple-50',  val: 'text-purple-700'  },
+              { label: 'Has Sub-tasks',  value: withSubs,   bg: 'bg-amber-50',   val: 'text-amber-700'   },
+              { label: 'Has Notes',      value: withNotes,  bg: 'bg-teal-50',    val: 'text-teal-700'    },
             ].map(({ label, value, bg, val }) => (
               <div key={label} className={`${bg} rounded-xl p-4 border border-white shadow-sm`}>
                 <div className={`text-2xl font-bold ${val}`}>{value}</div>
