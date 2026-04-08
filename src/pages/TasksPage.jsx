@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { RefreshCw, Plus, MessageSquare, X, Send, ExternalLink, CheckCircle, Clock, Circle, Menu, FileText, ChevronDown } from 'lucide-react'
-import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus, fetchSubitems } from '../utils/api'
+import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus, fetchSubitems, fetchTaskBoardColumns } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
 
@@ -359,6 +359,7 @@ export default function TasksPage({ onMenuClick }) {
   }, [])
 
   useEffect(() => {
+    fetchTaskBoardColumns() // debug — remove after finding status column ID
     loadData()
     const interval = setInterval(loadData, REFRESH_INTERVAL * 1000)
     return () => clearInterval(interval)

@@ -187,6 +187,14 @@ export function transformAnimal(item) {
 
 export const TASKS_BOARD_ID = '18398809584'
 
+export async function fetchTaskBoardColumns() {
+  const query = `{ boards(ids: [${TASKS_BOARD_ID}]) { columns { id title type } } }`
+  const data = await monday(query)
+  const cols = data.boards[0].columns
+  console.log('[TASKS board columns]', cols.map(c => `${c.id}:${c.title}(${c.type})`))
+  return cols
+}
+
 export async function fetchAllTasks() {
   let items = []
   let cursor = null
@@ -250,8 +258,6 @@ export function transformTask(item) {
   const statusCol = (item.column_values || []).find(c =>
     ['status', 'state', 'progress', 'task status'].includes((c.column?.title || '').toLowerCase())
   )
-  // Debug: log column titles for parent items (have a group)
-  if (item.group) console.log('[TASKS columns]', (item.column_values||[]).map(c => `${c.id}:${c.column?.title}=${c.text}`))
 
   return {
     id:             item.id,
