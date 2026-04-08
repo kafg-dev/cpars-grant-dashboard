@@ -11,7 +11,7 @@ const NAV_ITEMS = [
     section: 'OPERATIONS',
     items: [
       { id: 'staff',  label: 'Staff',          icon: Users,      live: true },
-      { id: 'animals',label: 'Animals',        icon: PawPrint,   live: false },
+      { id: 'animals',label: 'Animals',        icon: PawPrint,   live: true  },
     ],
   },
   {

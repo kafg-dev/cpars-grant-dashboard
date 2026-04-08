@@ -28,7 +28,7 @@ export async function fetchAllItems(boardId) {
           items {
             id name
             group { id title }
-            column_values { id text value }
+            column_values { id title text value }
           }
         }
       }
@@ -95,12 +95,70 @@ export function transformStaffItem(item) {
   return {
     id: item.id,
     name: item.name,
-    group: item.group,   // "DAILY UPDATES" or "Clock In and Clock Out"
+    group: item.group,
     staffName: col['text_mm023fg0']?.text || '',
     info:      col['long_text_mm02ag04']?.text || '',
-    date:      col['date4']?.text || '',          // "YYYY-MM-DD"
+    date:      col['date4']?.text || '',
     status:    col['status']?.text || '',
     clockIn:   col['text_mm02171']?.text || '',
     clockOut:  col['text_mm02p02j']?.text || '',
+  }
+}
+
+// ─── Animals ─────────────────────────────────────────────────────────────────
+
+export const ANIMALS_BOARD_ID = '18395842832'
+
+export async function fetchAllAnimals() {
+  return fetchAllItems(ANIMALS_BOARD_ID)
+}
+
+export function transformAnimal(item) {
+  // Map by column title (case-insensitive) — robust across ID changes
+  const byTitle = {}
+  const byTitleRaw = {}  // keeps raw column object for link parsing
+  item.column_values.forEach((c) => {
+    const key = (c.title || '').toLowerCase().trim()
+    byTitle[key] = c.text || ''
+    byTitleRaw[key] = c
+  })
+
+  const get = (...titles) => {
+    for (const t of titles) {
+      const v = byTitle[t.toLowerCase()]
+      if (v) return v
+    }
+    return ''
+  }
+
+  const getLink = (...titles) => {
+    for (const t of titles) {
+      const c = byTitleRaw[t.toLowerCase()]
+      if (c?.value) {
+        try { return JSON.parse(c.value).url || '' } catch {}
+      }
+    }
+    return ''
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    group: item.group,
+    animalId:    get('animal id'),
+    species:     get('species'),
+    status:      get('status'),
+    forAdoption: get('for adoption'),
+    location:    get('sanctuary location'),
+    weight:      get('weight (lbs)', 'weight'),
+    breed:       get('breed'),
+    sex:         get('sex'),
+    color:       get('color / markings', 'color'),
+    age:         get('estimated dob / age', 'age'),
+    intakeDate:  get('intake date'),
+    fromLocation:get('from location'),
+    photoLink:   getLink('photo link', 'photo'),
+    petfinderLink: getLink('petfinder link', 'petfinder'),
+    driveLink:   getLink('drive link', 'drive'),
   }
 }
