@@ -212,14 +212,17 @@ export function transformTask(item) {
     return ''
   }
 
+  const statusCol = item.column_values.find(c => (c.column?.title || '').toLowerCase() === 'status')
+
   return {
-    id:       item.id,
-    name:     item.name,
-    group:    item.group,
-    status:   get('status'),
-    timeline: get('timeline'),
-    notes:    get('notes') || getLink('notes'),
-    notesUrl: getLink('notes'),
+    id:             item.id,
+    name:           item.name,
+    group:          item.group,
+    status:         get('status'),
+    statusColumnId: statusCol?.id || '',
+    timeline:       get('timeline'),
+    notes:          get('notes') || getLink('notes'),
+    notesUrl:       getLink('notes'),
   }
 }
 
@@ -243,6 +246,16 @@ export async function createTaskUpdate(itemId, body) {
     }
   `
   return monday(query, { itemId: String(itemId), body })
+}
+
+export async function updateTaskStatus(itemId, columnId, label) {
+  const query = `
+    mutation UpdateStatus($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+      change_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
+    }
+  `
+  const value = label ? JSON.stringify({ label }) : JSON.stringify({ label: '' })
+  return monday(query, { boardId: String(TASKS_BOARD_ID), itemId: String(itemId), columnId, value })
 }
 
 export async function createTask(groupId, name) {
