@@ -214,8 +214,11 @@ export async function fetchAllTasks() {
     const data = await mondayTasks(query)
     const page = data.boards[0].items_page
     if (items.length === 0 && page.items.length > 0) {
-      console.log('[TASK key?]', TASKS_API_KEY === API_KEY ? 'SAME as main key (fallback)' : 'DIFFERENT (Nicks key)')
-      console.log('[TASK columns]', page.items[0].column_values.map(c => `${c.column?.title}(${c.id}) text="${c.text}" value=${c.value}`))
+      // Check board schema with Nick's key
+      mondayTasks(`{ boards(ids: [${TASKS_BOARD_ID}]) { columns { id title type } } }`).then(d => {
+        console.log('[BOARD schema cols]', d.boards?.[0]?.columns?.map(c => `${c.id}:${c.title}(${c.type})`))
+      })
+      console.log('[TASK columns]', page.items[0].column_values.map(c => `${c.column?.title}(${c.id}) text="${c.text}"`))
     }
     items = items.concat(page.items)
     cursor = page.cursor
