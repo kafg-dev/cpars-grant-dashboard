@@ -387,8 +387,8 @@ export default function StaffPage({ onMenuClick }) {
               <p className="text-lg font-medium text-gray-500">No staff data found</p>
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm overflow-x-auto">
-              <div style={{ minWidth: '640px' }}>
+            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white" style={{ minWidth: '700px' }}>
               {/* Day headers */}
               <div className="grid border-b border-gray-200" style={{ gridTemplateColumns: '140px repeat(7, 1fr)' }}>
                 <div className="px-3 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wider border-r border-gray-200">
