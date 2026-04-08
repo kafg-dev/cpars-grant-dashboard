@@ -1,11 +1,12 @@
-const API_KEY = import.meta.env.VITE_MONDAY_API_KEY
+const API_KEY       = import.meta.env.VITE_MONDAY_API_KEY
+const TASKS_API_KEY = import.meta.env.VITE_MONDAY_TASKS_API_KEY || API_KEY
 
-async function monday(query, variables = {}) {
+async function monday(query, variables = {}, apiKey = API_KEY) {
   const res = await fetch('/monday-api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: API_KEY,
+      Authorization: apiKey,
     },
     body: JSON.stringify(Object.keys(variables).length ? { query, variables } : { query }),
   })
@@ -13,6 +14,10 @@ async function monday(query, variables = {}) {
   const json = await res.json()
   if (json.errors) throw new Error(json.errors[0].message)
   return json.data
+}
+
+async function mondayTasks(query, variables = {}) {
+  return monday(query, variables, TASKS_API_KEY)
 }
 
 // Generic: fetch all items from any board with cursor pagination
@@ -187,14 +192,6 @@ export function transformAnimal(item) {
 
 export const TASKS_BOARD_ID = '18398809584'
 
-export async function fetchTaskBoardColumns() {
-  const query = `{ boards(ids: [${TASKS_BOARD_ID}]) { columns { id title type } } }`
-  const data = await monday(query)
-  const cols = data.boards[0].columns
-  console.log('[TASKS board columns]', cols.map(c => `${c.id}:${c.title}(${c.type})`))
-  return cols
-}
-
 export async function fetchAllTasks() {
   let items = []
   let cursor = null
@@ -213,15 +210,8 @@ export async function fetchAllTasks() {
         }
       }
     }`
-    const data = await monday(query)
+    const data = await mondayTasks(query)
     const page = data.boards[0].items_page
-    // On first page, fetch the first item directly to compare full column_values
-    if (items.length === 0 && page.items.length > 0) {
-      const firstId = page.items[0].id
-      const directQuery = `{ items(ids: [${firstId}]) { column_values { id text value column { title type } } } }`
-      const directData = await monday(directQuery)
-      console.log('[DIRECT item columns]', directData.items?.[0]?.column_values?.map(c => `${c.id}:${c.column?.title}(${c.column?.type}) text=${c.text} value=${c.value}`))
-    }
     items = items.concat(page.items)
     cursor = page.cursor
   } while (cursor)
@@ -237,7 +227,7 @@ export async function fetchSubitems(itemId) {
       }
     }
   }`
-  const data = await monday(query)
+  const data = await mondayTasks(query)
   const subs = data.items?.[0]?.subitems || []
   return subs.map(transformTask)
 }
@@ -293,7 +283,7 @@ export async function fetchTaskUpdates(itemId) {
       }
     }
   }`
-  const data = await monday(query)
+  const data = await mondayTasks(query)
   return data.items?.[0]?.updates || []
 }
 
@@ -303,7 +293,7 @@ export async function createTaskUpdate(itemId, body) {
       create_update(item_id: $itemId, body: $body) { id }
     }
   `
-  return monday(query, { itemId: String(itemId), body })
+  return mondayTasks(query, { itemId: String(itemId), body })
 }
 
 export async function updateTaskStatus(itemId, columnId, label) {
@@ -313,7 +303,7 @@ export async function updateTaskStatus(itemId, columnId, label) {
     }
   `
   const value = label ? JSON.stringify({ label }) : JSON.stringify({ label: '' })
-  return monday(query, { boardId: String(TASKS_BOARD_ID), itemId: String(itemId), columnId, value })
+  return mondayTasks(query, { boardId: String(TASKS_BOARD_ID), itemId: String(itemId), columnId, value })
 }
 
 export async function createTask(groupId, name) {
@@ -322,5 +312,5 @@ export async function createTask(groupId, name) {
       create_item(board_id: $boardId, group_id: $groupId, item_name: $name) { id name }
     }
   `
-  return monday(query, { boardId: String(TASKS_BOARD_ID), groupId, name })
+  return mondayTasks(query, { boardId: String(TASKS_BOARD_ID), groupId, name })
 }
