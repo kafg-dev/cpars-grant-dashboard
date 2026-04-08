@@ -113,6 +113,21 @@ export async function fetchAllAnimals() {
   return fetchAllItems(ANIMALS_BOARD_ID)
 }
 
+export async function fetchAnimalUpdates(itemId) {
+  const query = `{
+    items(ids: [${itemId}]) {
+      updates(limit: 50) {
+        id
+        text_body
+        created_at
+        creator { name }
+      }
+    }
+  }`
+  const data = await monday(query)
+  return data.items?.[0]?.updates || []
+}
+
 export function transformAnimal(item) {
   // Map by column title (case-insensitive) — robust across ID changes
   const byTitle = {}

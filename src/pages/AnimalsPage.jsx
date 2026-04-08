@@ -1,10 +1,62 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, Image, FolderOpen } from 'lucide-react'
-import { fetchAllAnimals, transformAnimal } from '../utils/api'
+import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, Image, FolderOpen, MessageSquare, X } from 'lucide-react'
+import { fetchAllAnimals, transformAnimal, fetchAnimalUpdates } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
 
 const SPECIES_EMOJI = { dog: '🐕', cat: '🐈', rabbit: '🐇', bird: '🐦', horse: '🐴' }
+
+// ─── Updates Modal ────────────────────────────────────────────────────────────
+
+function UpdatesModal({ animal, onClose }) {
+  const [updates, setUpdates] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAnimalUpdates(animal.id).then((data) => {
+      setUpdates(data)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [animal.id])
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="font-bold text-gray-900 text-lg">{animal.name}</div>
+            <div className="text-sm text-gray-500">{animal.breed} · Updates</div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 space-y-3">
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
+            </div>
+          ) : updates.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No updates yet.</p>
+          ) : (
+            updates.map((u) => (
+              <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-indigo-600">{u.creator?.name || 'Unknown'}</span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">{u.text_body}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function speciesEmoji(s) {
   return SPECIES_EMOJI[(s || '').toLowerCase()] || '🐾'
@@ -33,6 +85,7 @@ function StatusBadge({ value }) {
 
 function AnimalCard({ animal }) {
   const adoptable = animal.forAdoption?.toLowerCase() === 'yes'
+  const [showUpdates, setShowUpdates] = useState(false)
 
   return (
     <div className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow flex flex-col ${
@@ -85,31 +138,40 @@ function AnimalCard({ animal }) {
         </div>
       </div>
 
-      {/* Links */}
-      {(animal.petfinderLink || animal.photoLink || animal.driveLink) && (
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2">
-          {animal.petfinderLink && (
-            <a href={animal.petfinderLink} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
-              <ExternalLink className="w-3 h-3" />
-              Petfinder
-            </a>
-          )}
-          {animal.photoLink && (
-            <a href={animal.photoLink} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
-              <Image className="w-3 h-3" />
-              Photos
-            </a>
-          )}
-          {animal.driveLink && (
-            <a href={animal.driveLink} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
-              <FolderOpen className="w-3 h-3" />
-              Drive
-            </a>
-          )}
-        </div>
+      {/* Links + Updates */}
+      <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setShowUpdates(true)}
+          className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition"
+        >
+          <MessageSquare className="w-3 h-3" />
+          Updates
+        </button>
+        {animal.petfinderLink && (
+          <a href={animal.petfinderLink} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
+            <ExternalLink className="w-3 h-3" />
+            Petfinder
+          </a>
+        )}
+        {animal.photoLink && (
+          <a href={animal.photoLink} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
+            <Image className="w-3 h-3" />
+            Photos
+          </a>
+        )}
+        {animal.driveLink && (
+          <a href={animal.driveLink} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
+            <FolderOpen className="w-3 h-3" />
+            Drive
+          </a>
+        )}
+      </div>
+
+      {showUpdates && (
+        <UpdatesModal animal={animal} onClose={() => setShowUpdates(false)} />
       )}
     </div>
   )
