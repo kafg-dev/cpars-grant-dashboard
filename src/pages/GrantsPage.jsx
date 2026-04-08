@@ -30,7 +30,7 @@ function formatCurrency(n) {
   return `$${n.toLocaleString()}`
 }
 
-export default function GrantsPage() {
+export default function GrantsPage({ onMenuClick }) {
   const [grants, setGrants] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -93,9 +93,10 @@ export default function GrantsPage() {
         loading={loading}
         search={search}
         onSearch={setSearch}
+        onMenuClick={onMenuClick}
       />
       <div className="flex-1 overflow-auto">
-        <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />

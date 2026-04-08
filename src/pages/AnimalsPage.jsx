@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, FolderOpen, MessageSquare, X, FileText } from 'lucide-react'
+import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, FolderOpen, MessageSquare, X, FileText, Menu } from 'lucide-react'
 import { fetchAllAnimals, transformAnimal, fetchAnimalUpdates } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
@@ -278,7 +278,7 @@ function Detail({ label, value }) {
   )
 }
 
-export default function AnimalsPage() {
+export default function AnimalsPage({ onMenuClick }) {
   const [animals, setAnimals]         = useState([])
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState(null)
@@ -344,16 +344,21 @@ export default function AnimalsPage() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="px-6 py-4 flex items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Animals Master Tracker</h1>
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button onClick={onMenuClick} className="lg:hidden text-gray-500 hover:text-gray-700 p-1 -ml-1">
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Animals Master Tracker</h1>
+              </div>
+              <p className="text-sm text-gray-500 mt-0.5">
+                CPARS · Live from Monday.com
+                {lastUpdated && <span className="ml-2 text-gray-400">· Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>}
+              </p>
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">
-              CPARS · Live from Monday.com
-              {lastUpdated && <span className="ml-2 text-gray-400">· Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>}
-            </p>
           </div>
           <button
             onClick={loadData}
@@ -367,7 +372,7 @@ export default function AnimalsPage() {
       </header>
 
       <div className="flex-1 overflow-auto">
-        <div className="px-6 py-6 space-y-5">
+        <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-5">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />

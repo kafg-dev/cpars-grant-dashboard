@@ -1,4 +1,4 @@
-import { Award, Users, PawPrint, LayoutGrid, ChevronRight } from 'lucide-react'
+import { Award, Users, PawPrint, LayoutGrid, ChevronRight, X } from 'lucide-react'
 
 const NAV_ITEMS = [
   {
@@ -23,12 +23,20 @@ const NAV_ITEMS = [
   },
 ]
 
-export default function Sidebar({ activePage, onNavigate }) {
+export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
   return (
-    <aside className="w-56 shrink-0 bg-slate-900 flex flex-col h-full">
+    <aside className={`
+      w-56 shrink-0 bg-slate-900 flex flex-col h-full
+      fixed inset-y-0 left-0 z-40 transition-transform duration-200
+      lg:relative lg:translate-x-0 lg:z-auto
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
       {/* Brand */}
       <div className="px-4 py-5 border-b border-slate-700">
         <div className="flex items-center gap-2">
+          <button onClick={onClose} className="lg:hidden ml-auto text-slate-400 hover:text-white p-1 -mr-1 absolute right-3 top-4">
+            <X className="w-5 h-5" />
+          </button>
           <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center shrink-0">
             <PawPrint className="w-4 h-4 text-white" />
           </div>
