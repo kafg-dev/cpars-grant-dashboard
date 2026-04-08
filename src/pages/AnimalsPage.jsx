@@ -120,6 +120,34 @@ function speciesEmoji(s) {
   return SPECIES_EMOJI[(s || '').toLowerCase()] || '🐾'
 }
 
+const SPECIES_GRADIENT = {
+  dog:    'from-amber-100 to-orange-200',
+  cat:    'from-purple-100 to-pink-200',
+  rabbit: 'from-green-100 to-emerald-200',
+  bird:   'from-sky-100 to-blue-200',
+  horse:  'from-yellow-100 to-amber-200',
+}
+
+function PhotoPlaceholder({ species, name }) {
+  const key   = (species || '').toLowerCase()
+  const grad  = SPECIES_GRADIENT[key] || 'from-indigo-100 to-slate-200'
+  const emoji = speciesEmoji(species)
+  // Generate a subtle consistent pattern color from name
+  const hue   = [...(name || '')].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360
+
+  return (
+    <div className={`w-full h-44 rounded-t-xl bg-gradient-to-br ${grad} flex flex-col items-center justify-center gap-1 overflow-hidden relative`}>
+      {/* Decorative circles */}
+      <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full opacity-20"
+        style={{ background: `hsl(${hue},60%,70%)` }} />
+      <div className="absolute -top-4 -left-4 w-16 h-16 rounded-full opacity-20"
+        style={{ background: `hsl(${(hue + 120) % 360},60%,70%)` }} />
+      <span className="text-6xl drop-shadow-sm">{emoji}</span>
+      <span className="text-xs font-semibold text-gray-500 opacity-70">{name}</span>
+    </div>
+  )
+}
+
 function AdoptionBadge({ value }) {
   const yes = value?.toLowerCase() === 'yes'
   return (
@@ -151,8 +179,8 @@ function AnimalCard({ animal }) {
     <div className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow flex flex-col ${
       adoptable ? 'border-emerald-200' : 'border-gray-200'
     }`}>
-      {/* Photo */}
-      {imgSrc && !imgError && (
+      {/* Photo or cartoon placeholder */}
+      {imgSrc && !imgError ? (
         <div className="w-full h-44 overflow-hidden rounded-t-xl bg-gray-100">
           <img
             src={imgSrc}
@@ -161,19 +189,14 @@ function AnimalCard({ animal }) {
             className="w-full h-full object-cover"
           />
         </div>
+      ) : (
+        <PhotoPlaceholder species={animal.species} name={animal.name} />
       )}
 
       {/* Card header */}
       <div className={`px-4 pt-4 pb-3 border-b ${adoptable ? 'border-emerald-100' : 'border-gray-100'}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            {(!imgSrc || imgError) && (
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
-                adoptable ? 'bg-emerald-50' : 'bg-gray-50'
-              }`}>
-                {speciesEmoji(animal.species)}
-              </div>
-            )}
             <div>
               <div className="font-bold text-gray-900 text-base leading-tight">{animal.name}</div>
               <div className="text-xs text-gray-400 mt-0.5">
