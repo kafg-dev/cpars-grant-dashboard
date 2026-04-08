@@ -17,6 +17,7 @@ async function monday(query, variables = {}, apiKey = API_KEY) {
 }
 
 async function mondayTasks(query, variables = {}) {
+  console.log('[TASKS key prefix]', TASKS_API_KEY?.slice(0, 20))
   return monday(query, variables, TASKS_API_KEY)
 }
 
@@ -212,6 +213,9 @@ export async function fetchAllTasks() {
     }`
     const data = await mondayTasks(query)
     const page = data.boards[0].items_page
+    if (items.length === 0 && page.items.length > 0) {
+      console.log('[TASK columns]', page.items[0].column_values.map(c => `${c.column?.title}(${c.id})`))
+    }
     items = items.concat(page.items)
     cursor = page.cursor
   } while (cursor)
