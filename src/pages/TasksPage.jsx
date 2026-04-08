@@ -229,6 +229,73 @@ function NewTaskModal({ groups, onClose, onCreated }) {
   )
 }
 
+// ─── Task Row (recursive — handles subitems and sub-subitems) ────────────────
+
+function TaskRow({ task, depth, onSelect, onChanged }) {
+  const [expanded, setExpanded] = useState(true)
+  const hasChildren = task.subitems?.length > 0
+
+  const indent = depth === 0 ? 'pl-4' : depth === 1 ? 'pl-10' : 'pl-16'
+  const bgHover = depth === 0 ? 'hover:bg-gray-50' : depth === 1 ? 'hover:bg-indigo-50/40' : 'hover:bg-purple-50/40'
+  const nameSz  = depth === 0 ? 'text-sm font-medium' : 'text-xs font-normal'
+
+  return (
+    <>
+      <div className={`flex items-center gap-2 pr-4 py-2.5 transition group ${indent} ${bgHover}`}>
+        {/* Expand arrow or spacer */}
+        <div className="w-4 shrink-0">
+          {hasChildren ? (
+            <button onClick={() => setExpanded(e => !e)} className="text-gray-400 hover:text-gray-600 transition">
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`} />
+            </button>
+          ) : (
+            <span className="block w-3.5 h-3.5" />
+          )}
+        </div>
+
+        {/* Status dot */}
+        <div className={`w-2 h-2 rounded-full shrink-0 ${
+          task.status?.toLowerCase().includes('done')    ? 'bg-emerald-400' :
+          task.status?.toLowerCase().includes('working') ? 'bg-amber-400'   :
+          task.status?.toLowerCase().includes('stuck')   ? 'bg-red-400'     :
+                                                           'bg-gray-200'
+        }`} />
+
+        {/* Name */}
+        <div className="flex-1 min-w-0">
+          <div className={`${nameSz} text-gray-800 truncate`}>{task.name}</div>
+          {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
+        </div>
+
+        {/* Status picker */}
+        <StatusPicker task={task} onChanged={onChanged} />
+
+        {/* Notes link */}
+        {task.notesUrl && (
+          <a href={task.notesUrl} target="_blank" rel="noopener noreferrer"
+            className="shrink-0 text-indigo-400 hover:text-indigo-600 transition" title="Open notes">
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
+
+        {/* Updates */}
+        <button
+          onClick={() => onSelect(task)}
+          className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition opacity-0 group-hover:opacity-100 px-2 py-1 rounded-lg hover:bg-indigo-50"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Updates</span>
+        </button>
+      </div>
+
+      {/* Subitems */}
+      {hasChildren && expanded && task.subitems.map((sub) => (
+        <TaskRow key={sub.id} task={sub} depth={depth + 1} onSelect={onSelect} onChanged={onChanged} />
+      ))}
+    </>
+  )
+}
+
 // ─── Group color helper ───────────────────────────────────────────────────────
 
 function groupAccent(title = '') {
@@ -388,41 +455,7 @@ export default function TasksPage({ onMenuClick }) {
                     {!isCollapsed && (
                       <div className="divide-y divide-gray-50">
                         {group.tasks.map((task) => (
-                          <div key={task.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition group">
-                            {/* Status dot */}
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${
-                              task.status?.toLowerCase().includes('done')    ? 'bg-emerald-400' :
-                              task.status?.toLowerCase().includes('working') ? 'bg-amber-400'   :
-                              task.status?.toLowerCase().includes('stuck')   ? 'bg-red-400'     :
-                                                                               'bg-gray-200'
-                            }`} />
-
-                            {/* Task name */}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm text-gray-800 font-medium truncate">{task.name}</div>
-                              {task.timeline && <div className="text-xs text-gray-400 mt-0.5">{task.timeline}</div>}
-                            </div>
-
-                            {/* Status picker */}
-                            <StatusPicker task={task} onChanged={loadData} />
-
-                            {/* Notes link */}
-                            {task.notesUrl && (
-                              <a href={task.notesUrl} target="_blank" rel="noopener noreferrer"
-                                className="shrink-0 text-indigo-400 hover:text-indigo-600 transition" title="Open notes">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-
-                            {/* Updates button */}
-                            <button
-                              onClick={() => setSelectedTask(task)}
-                              className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 transition opacity-0 group-hover:opacity-100 px-2 py-1 rounded-lg hover:bg-indigo-50"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Updates</span>
-                            </button>
-                          </div>
+                          <TaskRow key={task.id} task={task} depth={0} onSelect={setSelectedTask} onChanged={loadData} />
                         ))}
                       </div>
                     )}

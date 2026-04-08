@@ -188,13 +188,42 @@ export function transformAnimal(item) {
 export const TASKS_BOARD_ID = '18398809584'
 
 export async function fetchAllTasks() {
-  return fetchAllItems(TASKS_BOARD_ID)
+  let items = []
+  let cursor = null
+  do {
+    const cursorArg = cursor ? `, cursor: "${cursor}"` : ''
+    const query = `{
+      boards(ids: [${TASKS_BOARD_ID}]) {
+        items_page(limit: 500${cursorArg}) {
+          cursor
+          items {
+            id name
+            group { id title }
+            column_values { id title text value column { title } }
+            subitems {
+              id name
+              column_values { id title text value column { title } }
+              subitems {
+                id name
+                column_values { id title text value column { title } }
+              }
+            }
+          }
+        }
+      }
+    }`
+    const data = await monday(query)
+    const page = data.boards[0].items_page
+    items = items.concat(page.items)
+    cursor = page.cursor
+  } while (cursor)
+  return items
 }
 
 export function transformTask(item) {
   const byTitle = {}
   const byTitleRaw = {}
-  item.column_values.forEach((c) => {
+  ;(item.column_values || []).forEach((c) => {
     const key = (c.column?.title || '').toLowerCase().trim()
     byTitle[key] = c.text || ''
     byTitleRaw[key] = c
@@ -212,7 +241,7 @@ export function transformTask(item) {
     return ''
   }
 
-  const statusCol = item.column_values.find(c => (c.column?.title || '').toLowerCase() === 'status')
+  const statusCol = (item.column_values || []).find(c => (c.column?.title || '').toLowerCase() === 'status')
 
   return {
     id:             item.id,
@@ -223,6 +252,7 @@ export function transformTask(item) {
     timeline:       get('timeline'),
     notes:          get('notes') || getLink('notes'),
     notesUrl:       getLink('notes'),
+    subitems:       (item.subitems || []).map(transformTask),
   }
 }
 
