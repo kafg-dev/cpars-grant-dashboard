@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, Image, FolderOpen, MessageSquare, X } from 'lucide-react'
+import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, Image, FolderOpen, MessageSquare, X, FileText } from 'lucide-react'
 import { fetchAllAnimals, transformAnimal, fetchAnimalUpdates } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
@@ -40,17 +40,49 @@ function UpdatesModal({ animal, onClose }) {
           ) : updates.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No updates yet.</p>
           ) : (
-            updates.map((u) => (
-              <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold text-indigo-600">{u.creator?.name || 'Unknown'}</span>
-                  <span className="text-xs text-gray-400">
-                    {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
+            updates.map((u) => {
+              const images = (u.assets || []).filter(a => ['jpg','jpeg','png','gif','webp'].includes(a.file_extension?.toLowerCase()))
+              const videos = (u.assets || []).filter(a => ['mp4','mov','avi','webm'].includes(a.file_extension?.toLowerCase()))
+              const others = (u.assets || []).filter(a => !images.includes(a) && !videos.includes(a))
+              return (
+                <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-indigo-600">{u.creator?.name || 'Unknown'}</span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  {u.text_body && <p className="text-sm text-gray-700 leading-relaxed">{u.text_body}</p>}
+
+                  {/* Images */}
+                  {images.length > 0 && (
+                    <div className={`grid gap-2 ${images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {images.map(a => (
+                        <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer">
+                          <img src={a.url} alt={a.name} className="w-full rounded-lg object-cover max-h-48 hover:opacity-90 transition" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Videos */}
+                  {videos.map(a => (
+                    <video key={a.id} controls className="w-full rounded-lg max-h-48">
+                      <source src={a.url} />
+                    </video>
+                  ))}
+
+                  {/* Other files */}
+                  {others.map(a => (
+                    <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
+                      <FileText className="w-3.5 h-3.5" />
+                      {a.name}
+                    </a>
+                  ))}
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">{u.text_body}</p>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>

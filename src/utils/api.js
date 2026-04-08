@@ -121,6 +121,12 @@ export async function fetchAnimalUpdates(itemId) {
         text_body
         created_at
         creator { name }
+        assets {
+          id
+          name
+          url
+          file_extension
+        }
       }
     }
   }`
