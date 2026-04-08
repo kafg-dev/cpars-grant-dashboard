@@ -73,13 +73,29 @@ function UpdatesModal({ animal, onClose }) {
                   ))}
 
                   {/* Other files */}
-                  {others.map(a => (
-                    <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
-                      <FileText className="w-3.5 h-3.5" />
-                      {a.name}
-                    </a>
-                  ))}
+                  {others.map(a => {
+                    const ext = (a.file_extension || '').toLowerCase()
+                    const isPdf  = ext === 'pdf'
+                    const isOffice = ['doc','docx','xls','xlsx','ppt','pptx'].includes(ext)
+                    const officeUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(a.url)}`
+                    return (
+                      <div key={a.id} className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                            <FileText className="w-3.5 h-3.5" />
+                            {a.name}
+                          </span>
+                          <a href={isOffice ? officeUrl : a.url} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
+                            Open ↗
+                          </a>
+                        </div>
+                        {isPdf && (
+                          <iframe src={a.url} title={a.name} className="w-full h-64 rounded-lg border border-gray-200" />
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })
