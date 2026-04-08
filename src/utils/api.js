@@ -215,6 +215,13 @@ export async function fetchAllTasks() {
     }`
     const data = await monday(query)
     const page = data.boards[0].items_page
+    // On first page, fetch the first item directly to compare full column_values
+    if (items.length === 0 && page.items.length > 0) {
+      const firstId = page.items[0].id
+      const directQuery = `{ items(ids: [${firstId}]) { column_values { id text value column { title type } } } }`
+      const directData = await monday(directQuery)
+      console.log('[DIRECT item columns]', directData.items?.[0]?.column_values?.map(c => `${c.id}:${c.column?.title}(${c.column?.type}) text=${c.text} value=${c.value}`))
+    }
     items = items.concat(page.items)
     cursor = page.cursor
   } while (cursor)
