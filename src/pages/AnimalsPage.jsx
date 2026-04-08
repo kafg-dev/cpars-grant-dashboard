@@ -1,10 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, Image, FolderOpen, MessageSquare, X, FileText } from 'lucide-react'
+import { RefreshCw, PawPrint, Heart, MapPin, Search, ExternalLink, FolderOpen, MessageSquare, X, FileText } from 'lucide-react'
 import { fetchAllAnimals, transformAnimal, fetchAnimalUpdates } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
 
 const SPECIES_EMOJI = { dog: '🐕', cat: '🐈', rabbit: '🐇', bird: '🐦', horse: '🐴' }
+
+// Convert a Google Drive share URL to a direct image URL
+function driveToImg(url) {
+  if (!url) return null
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/)
+  if (m) return `https://lh3.googleusercontent.com/d/${m[1]}`
+  // Already a direct image URL
+  if (/\.(jpg|jpeg|png|gif|webp)/i.test(url)) return url
+  return null
+}
 
 // ─── Updates Modal ────────────────────────────────────────────────────────────
 
@@ -134,20 +144,36 @@ function StatusBadge({ value }) {
 function AnimalCard({ animal }) {
   const adoptable = animal.forAdoption?.toLowerCase() === 'yes'
   const [showUpdates, setShowUpdates] = useState(false)
+  const [imgError, setImgError] = useState(false)
+  const imgSrc = driveToImg(animal.photoLink)
 
   return (
     <div className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow flex flex-col ${
       adoptable ? 'border-emerald-200' : 'border-gray-200'
     }`}>
+      {/* Photo */}
+      {imgSrc && !imgError && (
+        <div className="w-full h-44 overflow-hidden rounded-t-xl bg-gray-100">
+          <img
+            src={imgSrc}
+            alt={animal.name}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       {/* Card header */}
       <div className={`px-4 pt-4 pb-3 border-b ${adoptable ? 'border-emerald-100' : 'border-gray-100'}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
-              adoptable ? 'bg-emerald-50' : 'bg-gray-50'
-            }`}>
-              {speciesEmoji(animal.species)}
-            </div>
+            {(!imgSrc || imgError) && (
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
+                adoptable ? 'bg-emerald-50' : 'bg-gray-50'
+              }`}>
+                {speciesEmoji(animal.species)}
+              </div>
+            )}
             <div>
               <div className="font-bold text-gray-900 text-base leading-tight">{animal.name}</div>
               <div className="text-xs text-gray-400 mt-0.5">
@@ -200,13 +226,6 @@ function AnimalCard({ animal }) {
             className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
             <ExternalLink className="w-3 h-3" />
             Petfinder
-          </a>
-        )}
-        {animal.photoLink && (
-          <a href={animal.photoLink} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
-            <Image className="w-3 h-3" />
-            Photos
           </a>
         )}
         {animal.driveLink && (
