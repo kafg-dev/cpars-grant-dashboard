@@ -41,8 +41,9 @@ function UpdatesModal({ animal, onClose }) {
             <p className="text-sm text-gray-400 text-center py-6">No updates yet.</p>
           ) : (
             updates.map((u) => {
-              const images = (u.assets || []).filter(a => ['jpg','jpeg','png','gif','webp'].includes(a.file_extension?.toLowerCase()))
-              const videos = (u.assets || []).filter(a => ['mp4','mov','avi','webm'].includes(a.file_extension?.toLowerCase()))
+              const ext = (a) => (a.file_extension || '').toLowerCase().replace(/^\./, '')
+              const images = (u.assets || []).filter(a => ['jpg','jpeg','png','gif','webp'].includes(ext(a)))
+              const videos = (u.assets || []).filter(a => ['mp4','mov','avi','webm'].includes(ext(a)))
               const others = (u.assets || []).filter(a => !images.includes(a) && !videos.includes(a))
               return (
                 <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
@@ -71,27 +72,27 @@ function UpdatesModal({ animal, onClose }) {
                     </video>
                   ))}
 
-                  {/* Other files */}
+                  {/* Other files — open via Google Docs Viewer so they display in browser */}
                   {others.map(a => {
-                    const ext = (a.file_extension || '').toLowerCase()
-                    const isPdf  = ext === 'pdf'
-                    const isOffice = ['doc','docx','xls','xlsx','ppt','pptx'].includes(ext)
-                    const officeUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(a.url)}`
+                    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(a.url)}&embedded=true`
+                    const openUrl   = `https://docs.google.com/viewer?url=${encodeURIComponent(a.url)}`
                     return (
-                      <div key={a.id} className="space-y-1.5">
+                      <div key={a.id} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
                             <FileText className="w-3.5 h-3.5" />
                             {a.name}
                           </span>
-                          <a href={isOffice ? officeUrl : a.url} target="_blank" rel="noopener noreferrer"
+                          <a href={openUrl} target="_blank" rel="noopener noreferrer"
                             className="text-xs text-indigo-500 hover:text-indigo-700 font-medium transition">
                             Open ↗
                           </a>
                         </div>
-                        {isPdf && (
-                          <iframe src={a.url} title={a.name} className="w-full h-64 rounded-lg border border-gray-200" />
-                        )}
+                        <iframe
+                          src={viewerUrl}
+                          title={a.name}
+                          className="w-full h-64 rounded-lg border border-gray-200"
+                        />
                       </div>
                     )
                   })}
