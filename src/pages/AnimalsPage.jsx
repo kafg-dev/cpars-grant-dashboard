@@ -17,7 +17,7 @@ function AdoptionBadge({ value }) {
       yes ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
     }`}>
       <Heart className="w-3 h-3" />
-      {yes ? 'For Adoption' : 'Not Available'}
+      {yes ? 'For Adoption' : 'Not for Adoption'}
     </span>
   )
 }
@@ -172,7 +172,7 @@ export default function AnimalsPage() {
         !a.breed?.toLowerCase().includes(search.toLowerCase())) return false
     if (filterSpecies !== 'All' && a.species !== filterSpecies) return false
     if (filterAdoption === 'For Adoption' && a.forAdoption?.toLowerCase() !== 'yes') return false
-    if (filterAdoption === 'Not Available' && a.forAdoption?.toLowerCase() === 'yes') return false
+    if (filterAdoption === 'Not for Adoption' && a.forAdoption?.toLowerCase() === 'yes') return false
     if (filterLocation !== 'All' && a.location !== filterLocation) return false
     return true
   })
@@ -266,7 +266,7 @@ export default function AnimalsPage() {
               />
             </div>
             <FilterSelect label="Species"  value={filterSpecies}   onChange={setFilterSpecies}   options={allSpecies} />
-            <FilterSelect label="Adoption" value={filterAdoption}  onChange={setFilterAdoption}  options={['All', 'For Adoption', 'Not Available']} />
+            <FilterSelect label="Adoption" value={filterAdoption}  onChange={setFilterAdoption}  options={['All', 'For Adoption', 'Not for Adoption']} />
             <FilterSelect label="Location" value={filterLocation}  onChange={setFilterLocation}  options={allLocations} />
             {(filterSpecies !== 'All' || filterAdoption !== 'All' || filterLocation !== 'All' || search) && (
               <button
@@ -329,7 +329,7 @@ function FilterSelect({ label, value, onChange, options }) {
       className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
     >
       {options.map((o) => (
-        <option key={o} value={o}>{o === 'All' ? `All ${label}s` : o}</option>
+        <option key={o} value={o}>{o === 'All' ? `All ${label}` : o}</option>
       ))}
     </select>
   )
