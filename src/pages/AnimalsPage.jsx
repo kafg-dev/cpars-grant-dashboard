@@ -177,12 +177,12 @@ function AnimalCard({ animal }) {
           </div>
         )}
         <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2">
-          {animal.sex       && <Detail label="Sex"     value={animal.sex} />}
-          {animal.weight    && <Detail label="Weight"  value={`${animal.weight} lbs`} />}
-          {animal.age       && <Detail label="Age"     value={animal.age} />}
-          {animal.color     && <Detail label="Color"   value={animal.color} />}
-          {animal.fromLocation && <Detail label="From" value={animal.fromLocation} />}
-          {animal.intakeDate   && <Detail label="Intake" value={animal.intakeDate} />}
+          <Detail label="Sex"    value={animal.sex} />
+          <Detail label="Weight" value={animal.weight ? `${animal.weight} lbs` : ''} />
+          <Detail label="Age"    value={animal.age} />
+          <Detail label="Color"  value={animal.color} />
+          <Detail label="From"   value={animal.fromLocation} />
+          <Detail label="Intake" value={animal.intakeDate} />
         </div>
       </div>
 
@@ -229,7 +229,9 @@ function Detail({ label, value }) {
   return (
     <div>
       <span className="text-gray-400 uppercase tracking-wide text-[10px]">{label}</span>
-      <div className="text-gray-700 font-medium truncate">{value}</div>
+      <div className={`font-medium truncate ${value ? 'text-gray-700' : 'text-gray-300'}`}>
+        {value || '—'}
+      </div>
     </div>
   )
 }
