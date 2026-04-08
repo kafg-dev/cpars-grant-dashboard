@@ -250,8 +250,8 @@ export function transformTask(item) {
   const statusCol = (item.column_values || []).find(c =>
     ['status', 'state', 'progress', 'task status'].includes((c.column?.title || '').toLowerCase())
   )
-  // Debug: log column titles for first item only
-  if (!item.group) console.log('[TASKS columns]', (item.column_values||[]).map(c => `${c.id}:${c.column?.title}=${c.text}`))
+  // Debug: log column titles for parent items (have a group)
+  if (item.group) console.log('[TASKS columns]', (item.column_values||[]).map(c => `${c.id}:${c.column?.title}=${c.text}`))
 
   return {
     id:             item.id,
