@@ -28,7 +28,7 @@ export async function fetchAllItems(boardId) {
           items {
             id name
             group { id title }
-            column_values { id title text value }
+            column_values { id text value column { title } }
           }
         }
       }
@@ -118,7 +118,7 @@ export function transformAnimal(item) {
   const byTitle = {}
   const byTitleRaw = {}  // keeps raw column object for link parsing
   item.column_values.forEach((c) => {
-    const key = (c.title || '').toLowerCase().trim()
+    const key = (c.column?.title || '').toLowerCase().trim()
     byTitle[key] = c.text || ''
     byTitleRaw[key] = c
   })
