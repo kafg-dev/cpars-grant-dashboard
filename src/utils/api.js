@@ -213,6 +213,10 @@ export async function fetchAllTasks() {
     }`
     const data = await mondayTasks(query)
     const page = data.boards[0].items_page
+    if (items.length === 0 && page.items.length > 0) {
+      const s = page.items[page.items.length - 1] // last item is TEST 1
+      console.log('[statusCol raw]', JSON.stringify(s.statusCol), 'text:', s.statusCol?.[0]?.text, 'value:', s.statusCol?.[0]?.value)
+    }
     items = items.concat(page.items)
     cursor = page.cursor
   } while (cursor)
