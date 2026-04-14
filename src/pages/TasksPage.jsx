@@ -93,6 +93,7 @@ function UpdatesModal({ task, onClose }) {
   const [updates, setUpdates] = useState([])
   const [loading, setLoading] = useState(true)
   const [body, setBody]       = useState('')
+  const [posterName, setPosterName] = useState(() => localStorage.getItem('cpars_poster_name') || '')
   const [sending, setSending] = useState(false)
   const [error, setError]     = useState(null)
 
@@ -106,7 +107,10 @@ function UpdatesModal({ task, onClose }) {
   async function handleSend() {
     if (!body.trim()) return
     setSending(true); setError(null)
-    try { await createTaskUpdate(task.id, body.trim()); setBody(''); load() }
+    const name = posterName.trim()
+    if (name) localStorage.setItem('cpars_poster_name', name)
+    const fullBody = name ? `**${name}:** ${body.trim()}` : body.trim()
+    try { await createTaskUpdate(task.id, fullBody); setBody(''); load() }
     catch { setError('Failed to send. Please try again.') }
     finally { setSending(false) }
   }
@@ -137,8 +141,9 @@ function UpdatesModal({ task, onClose }) {
             const others = (u.assets || []).filter(a => !images.includes(a))
             return (
               <div key={u.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
-                <div className="flex justify-end">
-                  <span className="text-xs text-gray-400">{new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <div className="flex items-center justify-between">
+                  {u.creator?.name && <span className="text-xs font-semibold text-indigo-600">{u.creator.name}</span>}
+                  <span className="text-xs text-gray-400 ml-auto">{new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
                 {u.text_body && <p className="text-sm text-gray-700 leading-relaxed">{u.text_body}</p>}
                 {images.length > 0 && (
@@ -159,6 +164,13 @@ function UpdatesModal({ task, onClose }) {
 
         <div className="px-6 pb-5 pt-3 border-t border-gray-100 space-y-2">
           {error && <p className="text-xs text-red-500">{error}</p>}
+          <input
+            type="text"
+            value={posterName}
+            onChange={(e) => setPosterName(e.target.value)}
+            placeholder="Your name (e.g. Kaye, Nick, Tara…)"
+            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
           <div className="flex gap-2">
             <textarea
               value={body} onChange={(e) => setBody(e.target.value)}
@@ -171,7 +183,7 @@ function UpdatesModal({ task, onClose }) {
               <Send className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[10px] text-gray-400">Cmd+Enter to send</p>
+          <p className="text-[10px] text-gray-400">Cmd+Enter to send · Name is remembered</p>
         </div>
       </div>
     </div>

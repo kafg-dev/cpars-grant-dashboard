@@ -287,6 +287,7 @@ export async function fetchTaskUpdates(itemId) {
     items(ids: [${itemId}]) {
       updates(limit: 50) {
         id text_body created_at
+        creator { name }
         assets { id name url file_extension }
       }
     }
