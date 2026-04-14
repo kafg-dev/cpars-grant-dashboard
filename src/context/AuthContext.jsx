@@ -41,8 +41,7 @@ export function AuthProvider({ children }) {
 
   function login() {
     const clientId = import.meta.env.VITE_MONDAY_CLIENT_ID
-    const scopes   = 'me:read boards:read boards:write updates:write'
-    window.location.href = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}&scope=${encodeURIComponent(scopes)}`
+    window.location.href = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}`
   }
 
   function logout() {
