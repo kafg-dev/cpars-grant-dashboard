@@ -5,11 +5,8 @@ export default async function handler(req, res) {
   const { code } = req.query
   if (!code) return res.status(400).json({ error: 'Missing code' })
 
-  const clientId     = process.env.MONDAY_CLIENT_ID
-  const clientSecret = process.env.MONDAY_CLIENT_SECRET
-
-  // Debug — remove after fixing
-  console.log('[callback] client_id prefix:', clientId?.slice(0, 8), 'length:', clientId?.length)
+  const clientId     = process.env.VITE_MONDAY_CLIENT_ID
+  const clientSecret = process.env.VITE_MONDAY_CLIENT_SECRET
 
   try {
     const response = await fetch('https://auth.monday.com/oauth2/token', {
