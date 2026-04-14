@@ -9,10 +9,10 @@ export default async function handler(req, res) {
   const clientSecret = process.env.MONDAY_CLIENT_SECRET
 
   try {
-    const params = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, code })
-    const response = await fetch(`https://auth.monday.com/oauth2/token?${params.toString()}`, {
+    const response = await fetch('https://auth.monday.com/oauth2/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, code }).toString(),
     })
 
     const text = await response.text()
