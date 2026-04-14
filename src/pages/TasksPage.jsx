@@ -284,6 +284,27 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
           {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
         </div>
 
+        {/* Assignees */}
+        {task.assignees?.length > 0 && (
+          <div className="hidden sm:flex items-center -space-x-1 shrink-0">
+            {task.assignees.slice(0, 3).map((p, i) => {
+              const colors = ['bg-indigo-400','bg-pink-400','bg-teal-400','bg-amber-400','bg-purple-400','bg-sky-400']
+              const color = colors[(p.name?.charCodeAt(0) ?? i) % colors.length]
+              return (
+                <div key={i} title={p.name}
+                  className={`w-5 h-5 rounded-full ${color} border border-white flex items-center justify-center text-[9px] font-bold text-white uppercase`}>
+                  {(p.name || '?')[0]}
+                </div>
+              )
+            })}
+            {task.assignees.length > 3 && (
+              <div className="w-5 h-5 rounded-full bg-gray-300 border border-white flex items-center justify-center text-[9px] font-bold text-gray-600">
+                +{task.assignees.length - 3}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Status picker */}
         <StatusPicker task={task} onChanged={onChanged} />
 

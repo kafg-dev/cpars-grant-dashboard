@@ -265,11 +265,9 @@ export function transformTask(item) {
   // Parse people assigned to this task
   const peopleCol = (item.column_values || []).find(c => c.column?.title?.toLowerCase() === 'person' || c.column?.title?.toLowerCase() === 'people')
   let assignees = []
-  if (peopleCol?.value) {
-    try {
-      const parsed = JSON.parse(peopleCol.value)
-      assignees = (parsed.personsAndTeams || []).filter(p => p.kind === 'person').map(p => String(p.id))
-    } catch {}
+  const assigneeText = peopleCol?.text || ''
+  if (assigneeText) {
+    assignees = assigneeText.split(',').map(n => n.trim()).filter(Boolean).map(name => ({ name }))
   }
 
   const statusCol = (item.column_values || []).find(c =>
