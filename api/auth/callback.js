@@ -8,6 +8,9 @@ export default async function handler(req, res) {
   const clientId     = process.env.MONDAY_CLIENT_ID
   const clientSecret = process.env.MONDAY_CLIENT_SECRET
 
+  // Debug — remove after fixing
+  console.log('[callback] client_id prefix:', clientId?.slice(0, 8), 'length:', clientId?.length)
+
   try {
     const response = await fetch('https://auth.monday.com/oauth2/token', {
       method: 'POST',
