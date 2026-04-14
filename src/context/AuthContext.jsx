@@ -4,7 +4,11 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
-  const [token, setToken] = useState(() => localStorage.getItem('monday_token'))
+  const [token, setToken] = useState(() => {
+    // Clear token so users re-auth with updated scopes
+    localStorage.removeItem('monday_token')
+    return null
+  })
   const [loading, setLoading] = useState(true)
 
   const fetchUser = useCallback(async (accessToken) => {
@@ -37,7 +41,8 @@ export function AuthProvider({ children }) {
 
   function login() {
     const clientId = import.meta.env.VITE_MONDAY_CLIENT_ID
-    window.location.href = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}`
+    const scopes   = 'me:read boards:read boards:write updates:write'
+    window.location.href = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}&scope=${encodeURIComponent(scopes)}`
   }
 
   function logout() {
