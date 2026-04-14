@@ -32,6 +32,8 @@ export function AuthProvider({ children }) {
 
   function login() {
     const clientId    = import.meta.env.VITE_MONDAY_CLIENT_ID
+    console.log('[OAuth] client_id:', clientId)
+    if (!clientId) { alert('VITE_MONDAY_CLIENT_ID is not set — check Vercel env vars'); return }
     const redirectUri = `${window.location.origin}/auth/callback`
     const scopes      = 'me:read boards:read boards:write updates:write'
     window.location.href = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`
