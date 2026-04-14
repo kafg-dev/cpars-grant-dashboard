@@ -2,19 +2,14 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const AuthContext = createContext(null)
 
-const CLIENT_ID    = import.meta.env.VITE_MONDAY_CLIENT_ID
-const REDIRECT_URI = `${window.location.origin}/auth/callback`
-const SCOPES       = 'me:read boards:read boards:write updates:write'
-
 export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
   const [token, setToken] = useState(() => localStorage.getItem('monday_token'))
   const [loading, setLoading] = useState(true)
 
-  // Fetch user info with the stored token
   const fetchUser = useCallback(async (accessToken) => {
     try {
-      const res = await fetch('https://api.monday.com/v2', {
+      const res = await fetch('/monday-api', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: accessToken },
         body: JSON.stringify({ query: '{ me { id name email photo_thumb } }' }),
@@ -35,9 +30,9 @@ export function AuthProvider({ children }) {
     else setLoading(false)
   }, [token, fetchUser])
 
+  // Redirect to serverless function which builds the OAuth URL server-side
   function login() {
-    const url = `https://auth.monday.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`
-    window.location.href = url
+    window.location.href = '/api/auth/login'
   }
 
   function logout() {
