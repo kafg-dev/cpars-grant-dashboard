@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
       const res = await fetch('/monday-api', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: accessToken },
-        body: JSON.stringify({ query: '{ me { id name email photo_thumb } }' }),
+        body: JSON.stringify({ query: '{ me { id name email } }' }),
       })
       const json = await res.json()
       console.log('[fetchUser]', JSON.stringify(json).slice(0, 200))
