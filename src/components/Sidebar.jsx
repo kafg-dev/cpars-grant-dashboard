@@ -1,4 +1,4 @@
-import { Award, Users, PawPrint, LayoutGrid, ChevronRight, X, ClipboardList } from 'lucide-react'
+import { Award, Users, PawPrint, LayoutGrid, ChevronRight, X, ClipboardList, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
   {
@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   },
 ]
 
-export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
+export default function Sidebar({ activePage, onNavigate, isOpen, onClose, user, onLogout }) {
   return (
     <aside className={`
       w-56 shrink-0 bg-slate-900 flex flex-col h-full
@@ -87,9 +87,22 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-slate-700">
-        <div className="text-slate-500 text-xs">Animal Sanctuary Ops</div>
+      {/* User + Logout */}
+      <div className="px-3 py-3 border-t border-slate-700">
+        {user && (
+          <div className="flex items-center gap-2">
+            {user.photo_thumb
+              ? <img src={user.photo_thumb} alt="" className="w-7 h-7 rounded-full shrink-0" />
+              : <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center shrink-0 text-white text-xs font-bold">{user.name?.[0]}</div>
+            }
+            <div className="flex-1 min-w-0">
+              <div className="text-slate-200 text-xs font-medium truncate">{user.name}</div>
+            </div>
+            <button onClick={onLogout} title="Sign out" className="text-slate-500 hover:text-red-400 transition p-1">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   )

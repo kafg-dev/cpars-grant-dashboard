@@ -1,6 +1,13 @@
 const API_KEY       = import.meta.env.VITE_MONDAY_API_KEY
 const TASKS_API_KEY = import.meta.env.VITE_MONDAY_TASKS_API_KEY || API_KEY
 
+// User token set after OAuth login — used for Tasks board calls
+let userToken = localStorage.getItem('monday_token') || null
+
+export function setUserToken(token) {
+  userToken = token
+}
+
 async function monday(query, variables = {}, apiKey = API_KEY) {
   const res = await fetch('/monday-api', {
     method: 'POST',
@@ -16,8 +23,10 @@ async function monday(query, variables = {}, apiKey = API_KEY) {
   return json.data
 }
 
+// Tasks calls use the logged-in user's token so updates/status changes are attributed to them
 async function mondayTasks(query, variables = {}) {
-  return monday(query, variables, TASKS_API_KEY)
+  const key = userToken || TASKS_API_KEY
+  return monday(query, variables, key)
 }
 
 // Generic: fetch all items from any board with cursor pagination

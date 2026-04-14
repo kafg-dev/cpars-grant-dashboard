@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/monday-api", "destination": "https://api.monday.com/v2" }
+    { "source": "/monday-api", "destination": "https://api.monday.com/v2" },
+    { "source": "/auth/(.*)", "destination": "/index.html" }
   ]
 }
