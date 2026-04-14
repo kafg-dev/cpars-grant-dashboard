@@ -260,9 +260,9 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
 
   return (
     <>
-      <div className={`flex items-center gap-2 pr-4 py-2.5 transition group ${indent} ${bgHover}`}>
+      <div className={`flex items-center pr-4 py-2.5 transition group ${indent} ${bgHover}`}>
         {/* Expand arrow or spacer */}
-        <div className="w-4 shrink-0">
+        <div className="w-4 shrink-0 mr-1.5">
           {hasChildren ? (
             <button onClick={handleExpand} className="text-gray-400 hover:text-gray-600 transition">
               {loadingSubs
@@ -276,37 +276,29 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
         </div>
 
         {/* Depth indicator dot */}
-        <div className={`w-2 h-2 rounded-full shrink-0 ${depth === 0 ? 'bg-indigo-200' : 'bg-gray-200'}`} />
+        <div className={`w-2 h-2 rounded-full shrink-0 mr-2 ${depth === 0 ? 'bg-indigo-200' : 'bg-gray-200'}`} />
 
         {/* Name */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 mr-3">
           <div className={`${nameSz} text-gray-800 truncate`}>{task.name}</div>
           {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
         </div>
 
-        {/* Assignees */}
-        {task.assignees?.length > 0 && (
-          <div className="hidden sm:flex items-center -space-x-1 shrink-0">
-            {task.assignees.slice(0, 3).map((p, i) => {
-              const colors = ['bg-indigo-400','bg-pink-400','bg-teal-400','bg-amber-400','bg-purple-400','bg-sky-400']
-              const color = colors[(p.name?.charCodeAt(0) ?? i) % colors.length]
-              return (
-                <div key={i} title={p.name}
-                  className={`w-5 h-5 rounded-full ${color} border border-white flex items-center justify-center text-[9px] font-bold text-white uppercase`}>
-                  {(p.name || '?')[0]}
-                </div>
-              )
-            })}
-            {task.assignees.length > 3 && (
-              <div className="w-5 h-5 rounded-full bg-gray-300 border border-white flex items-center justify-center text-[9px] font-bold text-gray-600">
-                +{task.assignees.length - 3}
-              </div>
-            )}
-          </div>
-        )}
+        {/* People — fixed width, first names */}
+        <div className="hidden sm:flex w-36 shrink-0 mr-3">
+          {task.assignees?.length > 0 ? (
+            <span className="text-xs text-gray-500 truncate">
+              {task.assignees.map(p => p.name.split(' ')[0]).join(', ')}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-300">—</span>
+          )}
+        </div>
 
-        {/* Status picker */}
-        <StatusPicker task={task} onChanged={onChanged} />
+        {/* Status picker — fixed width */}
+        <div className="w-32 shrink-0 mr-2">
+          <StatusPicker task={task} onChanged={onChanged} />
+        </div>
 
         {/* Notes link */}
         {task.notesUrl && (
@@ -529,6 +521,15 @@ export default function TasksPage({ onMenuClick }) {
                     {/* Tasks */}
                     {!isCollapsed && (
                       <div className="divide-y divide-gray-50">
+                        {/* Column headers */}
+                        <div className="hidden sm:flex items-center px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+                          <div className="w-4 mr-1.5 shrink-0" />
+                          <div className="w-2 mr-2 shrink-0" />
+                          <div className="flex-1 mr-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Task</div>
+                          <div className="w-36 mr-3 shrink-0 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">People</div>
+                          <div className="w-32 mr-2 shrink-0 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Status</div>
+                          <div className="w-20 shrink-0" />
+                        </div>
                         {group.tasks.map((task) => (
                           <TaskRow key={task.id} task={task} depth={0} onSelect={setSelectedTask} onChanged={loadData} />
                         ))}
