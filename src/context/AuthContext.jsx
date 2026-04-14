@@ -15,11 +15,16 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ query: '{ me { id name email photo_thumb } }' }),
       })
       const json = await res.json()
+      console.log('[fetchUser]', JSON.stringify(json).slice(0, 200))
       const me = json.data?.me
       if (me) setUser(me)
-      else logout()
-    } catch {
-      logout()
+      else {
+        // Don't logout on error — could be a network blip
+        console.warn('[fetchUser] no me data, errors:', json.errors)
+        setLoading(false)
+      }
+    } catch (e) {
+      console.error('[fetchUser] error:', e)
     } finally {
       setLoading(false)
     }
