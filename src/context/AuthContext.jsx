@@ -4,11 +4,7 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
-  const [token, setToken] = useState(() => {
-    // Clear token so users re-auth with updated scopes
-    localStorage.removeItem('monday_token')
-    return null
-  })
+  const [token, setToken] = useState(() => localStorage.getItem('monday_token'))
   const [loading, setLoading] = useState(true)
 
   const fetchUser = useCallback(async (accessToken) => {
@@ -56,7 +52,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, saveToken }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, saveToken, fetchUser }}>
       {children}
     </AuthContext.Provider>
   )
