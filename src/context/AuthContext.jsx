@@ -30,9 +30,11 @@ export function AuthProvider({ children }) {
     else setLoading(false)
   }, [token, fetchUser])
 
-  // Redirect to serverless function which builds the OAuth URL server-side
   function login() {
-    window.location.href = '/api/auth/login'
+    const clientId    = import.meta.env.VITE_MONDAY_CLIENT_ID
+    const redirectUri = `${window.location.origin}/auth/callback`
+    const scopes      = 'me:read boards:read boards:write updates:write'
+    window.location.href = `https://auth.monday.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`
   }
 
   function logout() {
