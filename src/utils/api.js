@@ -190,7 +190,7 @@ export function transformAnimal(item) {
 
 // ─── Tasks (Program Management) ──────────────────────────────────────────────
 
-export const TASKS_BOARD_ID = '18398809584'
+export const TASKS_BOARD_ID = '18408579531'
 
 export async function fetchAllTasks() {
   let items = []
@@ -253,22 +253,31 @@ export function transformTask(item) {
     return ''
   }
 
-  // Status: try general column_values first, then fall back to explicitly-fetched statusCol
-  const statusFromGeneral = (item.column_values || []).find(c => {
-    const title = (c.column?.title || '').toLowerCase()
-    return ['status', 'state', 'progress', 'task status'].includes(title)
-  })
-  const statusColData = statusFromGeneral || item.statusCol?.[0] || null
+  // Parse people assigned to this task
+  const peopleCol = (item.column_values || []).find(c => c.column?.title?.toLowerCase() === 'person' || c.column?.title?.toLowerCase() === 'people')
+  let assignees = []
+  if (peopleCol?.value) {
+    try {
+      const parsed = JSON.parse(peopleCol.value)
+      assignees = (parsed.personsAndTeams || []).filter(p => p.kind === 'person').map(p => String(p.id))
+    } catch {}
+  }
+
+  const statusCol = (item.column_values || []).find(c =>
+    ['status', 'state', 'progress', 'task status'].includes((c.column?.title || '').toLowerCase())
+  )
 
   return {
     id:             item.id,
     name:           item.name,
     group:          item.group,
-    status:         statusColData?.text || '',
-    statusColumnId: statusColData ? 'color_mkv6tatz' : '',
+    status:         statusCol?.text || '',
+    statusColumnId: statusCol?.id || 'status',
     timeline:       get('timeline'),
     notes:          get('notes') || getLink('notes'),
     notesUrl:       getLink('notes'),
+    assignees,
+    assigneeNames:  peopleCol?.text || '',
     hasSubitems:    (item.subitems?.length ?? 0) > 0,
   }
 }

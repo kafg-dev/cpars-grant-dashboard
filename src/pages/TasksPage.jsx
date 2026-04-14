@@ -283,7 +283,8 @@ function TaskRow({ task, depth, onSelect, onChanged }) {
           {task.timeline && <div className="text-[10px] text-gray-400 mt-0.5">{task.timeline}</div>}
         </div>
 
-        {/* Status — hidden until Monday.com Multi-level board API exposes color columns */}
+        {/* Status picker */}
+        <StatusPicker task={task} onChanged={onChanged} />
 
         {/* Notes link */}
         {task.notesUrl && (
@@ -336,6 +337,7 @@ export default function TasksPage({ onMenuClick }) {
   const [selectedTask, setSelectedTask] = useState(null)
   const [showNewTask, setShowNewTask]   = useState(false)
   const [collapsed, setCollapsed]   = useState(new Set())
+  const [activePerson, setActivePerson] = useState('all')
 
   const loadData = useCallback(async () => {
     try {
@@ -372,9 +374,26 @@ export default function TasksPage({ onMenuClick }) {
     })
   }
 
+  // Build person list from all tasks
+  const personMap = {}
+  tasks.forEach(t => {
+    if (t.assigneeNames) {
+      t.assigneeNames.split(',').forEach(name => {
+        const n = name.trim()
+        if (n) personMap[n] = true
+      })
+    }
+  })
+  const people = Object.keys(personMap).sort()
+
+  // Filter tasks by selected person
+  const filteredTasks = activePerson === 'all'
+    ? tasks
+    : tasks.filter(t => t.assigneeNames?.toLowerCase().includes(activePerson.toLowerCase()))
+
   // Group tasks
   const groupMap = {}
-  tasks.forEach((t) => {
+  filteredTasks.forEach((t) => {
     const gid = t.group?.id
     if (!groupMap[gid]) groupMap[gid] = { id: gid, title: t.group?.title || '', tasks: [] }
     groupMap[gid].tasks.push(t)
@@ -382,9 +401,9 @@ export default function TasksPage({ onMenuClick }) {
   const groups = Object.values(groupMap)
 
   // Stats
-  const total      = tasks.length
-  const withSubs   = tasks.filter(t => t.hasSubitems).length
-  const withNotes  = tasks.filter(t => t.notesUrl).length
+  const total    = filteredTasks.length
+  const done     = filteredTasks.filter(t => t.status?.toLowerCase().includes('done')).length
+  const inProg   = filteredTasks.filter(t => t.status?.toLowerCase().includes('working')).length
   const groupCount = groups.length
 
   return (
@@ -432,10 +451,10 @@ export default function TasksPage({ onMenuClick }) {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Total Tasks',    value: total,      bg: 'bg-indigo-50',  val: 'text-indigo-700'  },
-              { label: 'Groups',         value: groupCount, bg: 'bg-purple-50',  val: 'text-purple-700'  },
-              { label: 'Has Sub-tasks',  value: withSubs,   bg: 'bg-amber-50',   val: 'text-amber-700'   },
-              { label: 'Has Notes',      value: withNotes,  bg: 'bg-teal-50',    val: 'text-teal-700'    },
+              { label: 'Total Tasks', value: total,      bg: 'bg-indigo-50',  val: 'text-indigo-700'  },
+              { label: 'Groups',      value: groupCount, bg: 'bg-purple-50',  val: 'text-purple-700'  },
+              { label: 'Done',        value: done,       bg: 'bg-emerald-50', val: 'text-emerald-700' },
+              { label: 'In Progress', value: inProg,     bg: 'bg-amber-50',   val: 'text-amber-700'   },
             ].map(({ label, value, bg, val }) => (
               <div key={label} className={`${bg} rounded-xl p-4 border border-white shadow-sm`}>
                 <div className={`text-2xl font-bold ${val}`}>{value}</div>
@@ -443,6 +462,25 @@ export default function TasksPage({ onMenuClick }) {
               </div>
             ))}
           </div>
+
+          {/* Person tabs */}
+          {people.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {['all', ...people].map(person => (
+                <button
+                  key={person}
+                  onClick={() => setActivePerson(person)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                    activePerson === person
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {person === 'all' ? 'All' : person.split(' ')[0]}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Task groups */}
           {loading ? (
