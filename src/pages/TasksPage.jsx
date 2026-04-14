@@ -70,7 +70,7 @@ function StatusPicker({ task, onChanged }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[160px]">
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[160px]">
           {STATUS_OPTIONS.map((opt) => (
             <button
               key={opt.label}
@@ -492,7 +492,7 @@ export default function TasksPage({ onMenuClick }) {
                 const isCollapsed = collapsed.has(group.id)
 
                 return (
-                  <div key={group.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div key={group.id} className="bg-white rounded-xl border border-gray-200 shadow-sm">
                     {/* Group header — clickable to collapse */}
                     <button
                       onClick={() => toggleCollapse(group.id)}
