@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { RefreshCw, Plus, MessageSquare, X, Send, ExternalLink, CheckCircle, Clock, Circle, Menu, FileText, ChevronDown } from 'lucide-react'
+import { RefreshCw, Plus, MessageSquare, X, Send, ExternalLink, CheckCircle, Clock, Circle, Menu, FileText, ChevronDown, Search } from 'lucide-react'
 import { fetchAllTasks, transformTask, fetchTaskUpdates, createTaskUpdate, createTask, updateTaskStatus, fetchSubitems } from '../utils/api'
 
 const REFRESH_INTERVAL = 30
@@ -352,6 +352,7 @@ export default function TasksPage({ onMenuClick }) {
   const [showNewTask, setShowNewTask]   = useState(false)
   const [collapsed, setCollapsed]   = useState(new Set())
   const [activePerson, setActivePerson] = useState('all')
+  const [search, setSearch]         = useState('')
 
   const loadData = useCallback(async () => {
     try {
@@ -400,10 +401,13 @@ export default function TasksPage({ onMenuClick }) {
   })
   const people = Object.keys(personMap).sort()
 
-  // Filter tasks by selected person
-  const filteredTasks = activePerson === 'all'
-    ? tasks
-    : tasks.filter(t => t.assigneeNames?.toLowerCase().includes(activePerson.toLowerCase()))
+  // Filter tasks by selected person + search
+  const searchLower = search.toLowerCase()
+  const filteredTasks = tasks.filter(t => {
+    const matchesPerson = activePerson === 'all' || t.assigneeNames?.toLowerCase().includes(activePerson.toLowerCase())
+    const matchesSearch = !searchLower || t.name.toLowerCase().includes(searchLower)
+    return matchesPerson && matchesSearch
+  })
 
   // Group tasks
   const groupMap = {}
@@ -477,6 +481,23 @@ export default function TasksPage({ onMenuClick }) {
             ))}
           </div>
 
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search tasks…"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Person tabs */}
           {people.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -519,7 +540,7 @@ export default function TasksPage({ onMenuClick }) {
                     </button>
 
                     {/* Tasks */}
-                    {!isCollapsed && (
+                    {(!isCollapsed || searchLower) && (
                       <div className="divide-y divide-gray-50">
                         {/* Column headers */}
                         <div className="hidden sm:flex items-center px-4 py-1.5 bg-gray-50 border-b border-gray-100">
